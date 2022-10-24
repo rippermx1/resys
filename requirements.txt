@@ -2,3 +2,7 @@ python-binance
 python-dotenv
 pandas
 pandas-ta
+numpy
+renko
+matplotlib
+pytest
