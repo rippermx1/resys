@@ -14,6 +14,7 @@ UP   = 'up'
 DOWN = 'down'
 BRICK_SIZE_10 = 10
 
+
 def get_data():
     data = client.get_klines(symbol="BTCUSDT", interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
     data = DataFrame(data)
@@ -80,11 +81,19 @@ def main ():
         if is_turning_down & is_overbought:
             print('SELL')
             stop_price = r_df.iloc[-2]['close'] + 10
+            client.futures_create_order(symbol='BTCUSDT', side=Client.SIDE_SELL, type=Client.ORDER_TYPE_STOP_MARKET, quantity=0.001, stopPrice=stop_price)
+            # TODO: Close Spot Position if exists
+            orders = client.get_open_orders(symbol='BTCUSDT')
+            if orders is not None:
+                client.create_order(symbol='BTCUSDT', side=Client.SIDE_SELL, type=Client.ORDER_TYPE_MARKET, quantity=0.001)
+                
             
         elif is_turning_up & is_oversold:
             print('BUY')
             stop_price = r_df.iloc[-2]['close'] - 10
-            
+            client.futures_create_order(symbol='BTCUSDT', side=Client.SIDE_BUY, type=Client.ORDER_TYPE_STOP_MARKET, quantity=0.001, stopPrice=stop_price)
+
+            client.create_order(symbol='BTCUSDT', side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=0.001)
 
 
 
