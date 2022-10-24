@@ -70,7 +70,14 @@ def main ():
         # levels_df = DataFrame(detect_level_method_1(r_df))
         # [print(x) for x in detect_level_method_1(r_df)]
 
-main()
+if __name__ == "__main__":
+    # TODO: Create a Class for main loop
+    while True:
+        try:
+            main()
+        except Exception as e:
+            print(e)
+            continue
 
 """ df = get_data()
 renko = Renko(10, df['close'])
