@@ -22,3 +22,28 @@
                 If the brick is Red 
                     We can place an Entry Order (Below the Mid Line Donchian Channel)
                     We can place an Stop Loss Order (Above the last Green Brick)                    
+
+
+# Management
+* option 1: Buy Spot, Sell Spot
+    * If conditions are meet for BUY:
+        * Place a BUY order Above the Mid Line Donchian Channel
+        * Place a STOP LOSS order Below the last Red Brick
+        * Place a TAKE PROFIT order at 2:1 Risk Reward Ratio (If Sell Conditions are meet)
+* optoin 2: Buy Future, Hedge Sell Future
+    * If conditions are meet for BUY:
+        * Place a BUY order Above the Mid Line Donchian Channel
+        * Place a STOP LOSS order Below the last Red Brick
+    * If Sell Conditions are meet:
+        * Place a SELL order (Future) Below the Mid Line Donchian Channel
+        * Place a STOP LOSS order Above the last Green Brick
+        * This way we can hedge the previous BUY order
+* option 3: Buy Spot, Sell Spot, Hedge Sell Future
+    * If conditions are meet for BUY:
+        * Place a BUY order Above the Mid Line Donchian Channel
+        * Place a STOP LOSS order Below the last Red Brick
+        * Place a TAKE PROFIT order when Sell Conditions are meet
+    * If Sell Conditions are meet:
+        * Place a SELL order (Future) Below the Mid Line Donchian Channel
+        * Place a STOP LOSS order Above the last Green Brick
+        * Place a TAKE PROFIT order when Buy Conditions are meet
