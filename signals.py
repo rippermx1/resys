@@ -16,8 +16,6 @@ client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
 def main():
     while True:
         df = DataFrame(client.get_klines(symbol="BTCUSDT", interval=Client.KLINE_INTERVAL_4HOUR, limit=1000))
-        print(df.iloc[[0:5]])
-        # columns=["time", "open", "high", "low", "close", "volume"]
         df.join(ta.stoch(df["high"], df["low"], df["close"], 14, 3, 6))
         df["ema_fast"] = ta.ema(df["close"], 9)
         df["ema_slow"] = ta.ema(df["close"], 12)
