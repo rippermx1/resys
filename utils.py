@@ -1,5 +1,9 @@
+from typing import Dict
 from pandas import DataFrame
 import numpy as np
+from constants import SPOT, FUTURE
+from binance import Client
+import math
 
 
 # to make sure the new level area does not exist already
@@ -81,3 +85,73 @@ def detect_level_method_2( df):
                     'type': 'support'
                     })
     return parsed
+
+
+def round_down(client: Client, symbol, number):
+    info = client.get_symbol_info(symbol=symbol)
+    step_size = [float(_['stepSize']) for _ in info['filters'] if _['filterType'] == 'LOT_SIZE'][0]
+    step_size = '%.8f' % step_size
+    step_size = step_size.rstrip('0')
+    decimals = len(step_size.split('.')[1])
+    return math.floor(number * 10 ** decimals) / 10 ** decimals
+
+
+def round_down_price(client: Client, symbol, number):
+    info = client.get_symbol_info(symbol=symbol)
+    tick_size = [float(_['tickSize']) for _ in info['filters'] if _['filterType'] == 'PRICE_FILTER'][0]
+    tick_size = '%.8f' % tick_size
+    tick_size = tick_size.rstrip('0')
+    decimals = len(tick_size.split('.')[1])
+    return math.floor(number * 10 ** decimals) / 10 ** decimals
+
+
+def get_balance(client: Client):
+    return float([i for i in client.get_account()['balances'] if i['asset'] == 'USDT'][0]['free'])
+
+
+def get_order_book(client: Client, symbol: str, market: str) -> DataFrame:
+    order_book = None
+    if market == SPOT:
+        order_book = DataFrame(client.get_order_book(symbol=symbol, limit=10))
+    elif market == FUTURE:
+        order_book = DataFrame(client.futures_order_book(symbol=symbol, limit=10))
+    return order_book
+
+
+def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
+    entry_order = None
+    stop_order = None
+    balance = get_balance(client)
+    
+    if balance >= volume:
+        order_book = get_order_book(client, symbol, SPOT)
+        for i in range(len(order_book)):
+            ask_price = float(order_book.iloc[i].asks[0])
+            ask_liquidity = float(order_book.iloc[i].asks[1])
+            qty_to_buy = round_down(client, symbol, (volume / ask_price))
+            # print("qty {}".format(qty))        
+            if qty_to_buy < ask_liquidity:
+                entry_order = client.create_order(
+                    symbol=symbol, 
+                    side=Client.SIDE_BUY, 
+                    type=Client.ORDER_TYPE_LIMIT, 
+                    quantity=qty_to_buy, 
+                    timeInForce=Client.TIME_IN_FORCE_GTC, 
+                    price=ask_price
+                )
+                print("entry_order {}".format(entry_order))      
+                if entry_order is not None:
+                    qty_to_sell = round_down(client, symbol, float(entry_order["fills"][0]["qty"])-float(entry_order["fills"][0]["commission"]))                    
+                    sl_price = round_down_price(client, symbol, stop_price)
+                    stop_order = client.create_order(
+                        symbol=symbol, 
+                        side=Client.SIDE_SELL, 
+                        type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
+                        quantity=qty_to_sell, 
+                        price=sl_price, 
+                        stopPrice=sl_price, 
+                        timeInForce=Client.TIME_IN_FORCE_GTC
+                    )
+                    print("stop_order {}".format(stop_order))                                    
+                break               
+    return entry_order, qty_to_buy, stop_order, qty_to_sell
