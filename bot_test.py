@@ -1,4 +1,4 @@
-from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal
+from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal, _close_above_dc, _close_below_dc
 from pandas import DataFrame
 
 from constants import BUY, SELL
@@ -80,3 +80,35 @@ def test_get_signal_none():
             "type": ['up', 'up', 'up', 'down']
         })
     assert _get_signal(df) == None
+
+
+def test_close_above_dc():
+    df = DataFrame({
+            "close": [100, 101, 102, 103],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_above_dc(df) == True
+
+
+def test_not_close_above_dc():
+    df = DataFrame({
+            "close": [95, 99, 100, 95],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_above_dc(df) == False
+
+
+def test_close_below_dc():
+    df = DataFrame({
+            "close": [100, 98, 95, 90],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_below_dc(df) == True
+
+
+def test_not_close_below_dc():
+    df = DataFrame({
+            "close": [95, 99, 96, 103],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_below_dc(df) == False
