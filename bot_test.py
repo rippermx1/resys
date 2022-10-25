@@ -1,5 +1,7 @@
-from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up
+from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal
 from pandas import DataFrame
+
+from constants import BUY, SELL
 
 def test_is_overbought():
     df = DataFrame({
@@ -51,3 +53,30 @@ def test_is_turning_up():
 def test_is_not_turning_up():
     df = DataFrame({ "type": ['up', 'down', 'down', 'up'] })
     assert _is_turning_up(df) == False
+
+
+def test_get_signal_buy():
+    df = DataFrame({
+            "STOCHk_14_2_4": [4, 2, 0, 7],            
+            "STOCHd_14_2_4": [4, 2, 0, 5],
+            "type": ['down', 'down', 'down', 'up']
+        })
+    assert _get_signal(df) == BUY
+
+
+def test_get_signal_sell():
+    df = DataFrame({
+            "STOCHk_14_2_4": [96, 98, 100, 94],            
+            "STOCHd_14_2_4": [96, 98, 100, 96],
+            "type": ['up', 'up', 'up', 'down']
+        })
+    assert _get_signal(df) == SELL
+
+
+def test_get_signal_none():
+    df = DataFrame({
+            "STOCHk_14_2_4": [5, 98, 100, 94],            
+            "STOCHd_14_2_4": [96, 98, 100, 5],
+            "type": ['up', 'up', 'up', 'down']
+        })
+    assert _get_signal(df) == None
