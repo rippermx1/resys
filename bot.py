@@ -5,6 +5,13 @@ from pandas import DataFrame
 from binance import Client
 from renko import Renko
 import pandas_ta as ta
+import logging
+
+logging.basicConfig(filename="./std.log", 
+					format='%(asctime)s %(message)s', 
+					filemode='w')
+logger=logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 from constants import BRICK_SIZE_10, BUY, DOWN, SELL, SPOT, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
 from utils import buy_spot_with_sl, round_down_price
@@ -52,6 +59,16 @@ def _is_turning_up(df: DataFrame) -> bool:
     return df.iloc[-1]['type'] == UP and df.iloc[-2]['type'] == DOWN and df.iloc[-3]['type'] == DOWN and df.iloc[-4]['type'] == DOWN
 
 
+def _close_above_dc(df: DataFrame) -> bool:
+    ''' Determine if close is above DC '''
+    return df.iloc[-1]['close'] > df.iloc[-1]['DCM_5_5']
+
+
+def _close_below_dc(df: DataFrame) -> bool:
+    ''' Determine if close is below DC '''
+    return df.iloc[-1]['close'] < df.iloc[-1]['DCM_5_5']
+
+
 # TODO: Refactor Technical Analysis to a function
 def _get_renko_bricks_df(brick_size: int, debug: bool = False) -> DataFrame:
     df = get_data()
@@ -66,20 +83,26 @@ def _get_renko_bricks_df(brick_size: int, debug: bool = False) -> DataFrame:
     r_df = r_df.join(stoch)
     if debug:
         print(r_df.tail(5), end='\n', flush=True)
+        logger.debug(r_df.tail(5))
     return r_df
 
 
 def _get_signal(r_df: DataFrame) -> str:
     ''' Determine signal '''
     signal = None
-    if _is_turning_down(r_df) & _is_overbought(r_df):
+    if _is_turning_down(r_df) & _is_overbought(r_df) & _close_below_dc(r_df):
         signal = SELL
-    elif _is_turning_up(r_df) & _is_oversold(r_df):
+    elif _is_turning_up(r_df) & _is_oversold(r_df) & _close_above_dc(r_df):
         signal = BUY
     return signal
 
 
 def main ():
+    entry_order = None
+    stop_order = None
+    qty_to_buy = 0
+    qty_to_sell = 0
+    stop_price = 0
     while True:
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
         signal = _get_signal(r_df)
@@ -87,12 +110,19 @@ def main ():
         if signal == SELL:
             print('SELL')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] + BRICK_SIZE_10)
+            pass
             
             
         elif signal == BUY:
             print('BUY')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] - BRICK_SIZE_10)
-            entry_order, qty_to_buy, stop_order, qty_to_sell = buy_spot_with_sl(client, symbol, volume, stop_price)
+            if entry_order is None:
+                entry_order, _, stop_order, qty_to_sell = buy_spot_with_sl(client, symbol, volume, stop_price)
+
+            print(f'entry_order: {entry_order}')
+            print(f'entry_order: {stop_order}')
+            logger.debug(f'entry_order: {entry_order}')
+            logger.debug(f'entry_order: {stop_order}')
             if entry_order is not None and entry_order['status'] == 'FILLED':
                 while True:
                     r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
@@ -101,7 +131,11 @@ def main ():
                     if signal == SELL:
                         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
                         client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
+                        break
                     else:
+                        if stop_order is not None and stop_order['status'] == 'FILLED':
+                            break
+
                         stop_price = r_df['DCM_5_5'][-1] - BRICK_SIZE_10
                         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
                         stop_order = client.create_order(
@@ -112,7 +146,7 @@ def main ():
                             price=stop_price, 
                             stopPrice=stop_price, 
                             timeInForce=Client.TIME_IN_FORCE_GTC
-                        )   
+                        )                                                    
 
                     
                     
@@ -145,3 +179,29 @@ stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['cl
 r_df = r_df.join(stoch)
 
 print(get_signals(r_df)) """
+
+
+def backtest(df: DataFrame, lookback: int = 15):
+    ''' Backtest '''
+
+    for i in range(lookback, len(df)):
+        is_turning_down = df.iloc[i]['type'] == DOWN and df.iloc[i-1]['type'] == UP and df.iloc[i-2]['type'] == UP and df.iloc[i-3]['type'] == UP
+        is_turning_up = df.iloc[i]['type'] == UP and df.iloc[i-1]['type'] == DOWN and df.iloc[i-2]['type'] == DOWN and df.iloc[i-3]['type'] == DOWN
+
+        s1 = df.iloc[i]['STOCHk_14_2_4'] < df.iloc[i]['STOCHd_14_2_4']
+        s2 = df.iloc[i-1]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[i-1]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
+        s3 = df.iloc[i-2]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[i-2]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
+        s4 = df.iloc[i-3]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[i-3]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
+        is_overbought = s1 and s2 and s3 and s4
+
+        b1 = df.iloc[i]['STOCHk_14_2_4'] > df.iloc[i]['STOCHd_14_2_4']
+        b2 = df.iloc[i-1]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-1]['STOCHd_14_2_4'] < STOCH_OVERSOLD
+        b3 = df.iloc[i-2]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-2]['STOCHd_14_2_4'] < STOCH_OVERSOLD
+        b4 = df.iloc[i-3]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-3]['STOCHd_14_2_4'] < STOCH_OVERSOLD
+        is_oversold = b1 and b2 and b3 and b4
+
+        if is_turning_down and is_overbought:
+            print('SELL')
+        if is_turning_up and is_oversold:
+            print('BUY')
+
