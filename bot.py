@@ -5,15 +5,15 @@ from pandas import DataFrame
 from binance import Client
 from renko import Renko
 import pandas_ta as ta
+
+from constants import BRICK_SIZE_10, BUY, DOWN, SELL, SPOT, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
+from utils import buy_spot_with_sl, round_down_price
+
 load_dotenv()
 
 client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
-STOCH_OVERBOUGHT = 95
-STOCH_OVERSOLD   = 5
-UP   = 'up'
-DOWN = 'down'
-BRICK_SIZE_10 = 10
-
+symbol='BTCUSDT'
+volume = 100 #USD
 
 def get_data():
     data = client.get_klines(symbol="BTCUSDT", interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
@@ -53,7 +53,7 @@ def _is_turning_up(df: DataFrame) -> bool:
 
 
 # TODO: Refactor Technical Analysis to a function
-def _get_renko_bricks_df(brick_size: int):
+def _get_renko_bricks_df(brick_size: int, debug: bool = False) -> DataFrame:
     df = get_data()
     renko = Renko(brick_size, df['close'])
     renko.create_renko()
@@ -64,37 +64,58 @@ def _get_renko_bricks_df(brick_size: int):
 
     stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=4))
     r_df = r_df.join(stoch)
+    if debug:
+        print(r_df.tail(5), end='\n', flush=True)
     return r_df
+
+
+def _get_signal(r_df: DataFrame) -> str:
+    ''' Determine signal '''
+    signal = None
+    if _is_turning_down(r_df) & _is_overbought(r_df):
+        signal = SELL
+    elif _is_turning_up(r_df) & _is_oversold(r_df):
+        signal = BUY
+    return signal
+
 
 def main ():
     while True:
-        r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10)
-        
-        print(r_df.tail(5), end='\n', flush=True)
+        r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
+        signal = _get_signal(r_df)
 
-        is_overbought = _is_overbought(r_df)
-        is_oversold   = _is_oversold(r_df)
-
-        is_turning_down = _is_turning_down(r_df)
-        is_turning_up = _is_turning_up(r_df)
-
-        if is_turning_down & is_overbought:
+        if signal == SELL:
             print('SELL')
-            stop_price = r_df.iloc[-2]['close'] + 10
-            client.futures_create_order(symbol='BTCUSDT', side=Client.SIDE_SELL, type=Client.ORDER_TYPE_STOP_MARKET, quantity=0.001, stopPrice=stop_price)
-            # TODO: Close Spot Position if exists
-            orders = client.get_open_orders(symbol='BTCUSDT')
-            if orders is not None:
-                client.create_order(symbol='BTCUSDT', side=Client.SIDE_SELL, type=Client.ORDER_TYPE_MARKET, quantity=0.001)
-                
+            stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] + BRICK_SIZE_10)
             
-        elif is_turning_up & is_oversold:
+            
+        elif signal == BUY:
             print('BUY')
-            stop_price = r_df.iloc[-2]['close'] - 10
-            client.futures_create_order(symbol='BTCUSDT', side=Client.SIDE_BUY, type=Client.ORDER_TYPE_STOP_MARKET, quantity=0.001, stopPrice=stop_price)
+            stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] - BRICK_SIZE_10)
+            entry_order, qty_to_buy, stop_order, qty_to_sell = buy_spot_with_sl(client, symbol, volume, stop_price)
+            if entry_order is not None and entry_order['status'] == 'FILLED':
+                while True:
+                    r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
+                    signal = _get_signal(r_df)
+                    
+                    if signal == SELL:
+                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+                        client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
+                    else:
+                        stop_price = r_df['DCM_5_5'][-1] - BRICK_SIZE_10
+                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+                        stop_order = client.create_order(
+                            symbol=symbol, 
+                            side=Client.SIDE_SELL, 
+                            type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
+                            quantity=qty_to_sell, 
+                            price=stop_price, 
+                            stopPrice=stop_price, 
+                            timeInForce=Client.TIME_IN_FORCE_GTC
+                        )   
 
-            client.create_order(symbol='BTCUSDT', side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=0.001)
-
+                    
+                    
 
 
         # TODO: Migrate to a service
@@ -102,11 +123,12 @@ def main ():
         # levels_df = DataFrame(detect_level_method_1(r_df))
         # [print(x) for x in detect_level_method_1(r_df)]
 
+
 if __name__ == "__main__":
     # TODO: Create a Class for main loop
     while True:
         try:
-            main()
+            main()            
         except Exception as e:
             print(e)
             continue
