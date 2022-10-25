@@ -155,3 +155,17 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
                     print("stop_order {}".format(stop_order))                                    
                 break               
     return entry_order, qty_to_buy, stop_order, qty_to_sell
+
+
+def get_klines_history(client: Client, symbol: str, interval: str, start_time: int, end_time: int):
+    klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=start_time, end_str=end_time)
+    df = DataFrame(klines, columns=['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
+    df['open_time'] = df['open_time'].astype('datetime64[ms]')
+    df['close_time'] = df['close_time'].astype('datetime64[ms]')
+    df['open'] = df['open'].astype('float')
+    df['high'] = df['high'].astype('float')
+    df['low'] = df['low'].astype('float')
+    df['close'] = df['close'].astype('float')
+    df['volume'] = df['volume'].astype('float')
+    df.set_index('open_time', inplace=True)
+    return df
