@@ -4,7 +4,13 @@ import numpy as np
 from constants import SPOT, FUTURE
 from binance import Client
 import math
+import logging
 
+logging.basicConfig(filename="./std.log", 
+					format='%(asctime)s %(message)s', 
+					filemode='w')
+logger=logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 # to make sure the new level area does not exist already
 def is_far_from_level( value, levels, df: DataFrame):    
@@ -121,39 +127,48 @@ def get_order_book(client: Client, symbol: str, market: str) -> DataFrame:
 def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
     entry_order = None
     stop_order = None
+    qty_to_buy = 0
+    qty_to_sell = 0
+    logger.info("Checking balance")
     balance = get_balance(client)
+    if balance < volume:
+        logger.info("Not enough balance to buy")
+        return entry_order, qty_to_buy, stop_order, qty_to_sell
+
     
-    if balance >= volume:
-        order_book = get_order_book(client, symbol, SPOT)
-        for i in range(len(order_book)):
-            ask_price = float(order_book.iloc[i].asks[0])
-            ask_liquidity = float(order_book.iloc[i].asks[1])
-            qty_to_buy = round_down(client, symbol, (volume / ask_price))
-            # print("qty {}".format(qty))        
-            if qty_to_buy < ask_liquidity:
-                entry_order = client.create_order(
+    logger.info("Checking Order Book")
+    order_book = get_order_book(client, symbol, SPOT)
+    for i in range(len(order_book)):
+        ask_price = float(order_book.iloc[i].asks[0])
+        ask_liquidity = float(order_book.iloc[i].asks[1])
+        qty_to_buy = round_down(client, symbol, (volume / ask_price))
+        logger.info(f'Trying to get best price: {ask_price}')   
+        if qty_to_buy < ask_liquidity:
+            logger.info(f'Buying {symbol} at SPOT with Volume={volume}USDT at Price {ask_price}')
+            entry_order = client.create_order(
+                symbol=symbol, 
+                side=Client.SIDE_BUY, 
+                type=Client.ORDER_TYPE_LIMIT, 
+                quantity=qty_to_buy, 
+                timeInForce=Client.TIME_IN_FORCE_GTC, 
+                price=ask_price
+            )
+            print("entry_order {}".format(entry_order))      
+            if entry_order is not None:
+                qty_to_sell = round_down(client, symbol, float(entry_order["fills"][0]["qty"])-float(entry_order["fills"][0]["commission"]))                    
+                sl_price = round_down_price(client, symbol, stop_price)
+                logger.info(f'Stop Sell {symbol} at SPOT with Volume={qty_to_sell}BTC at Price {sl_price}')
+                stop_order = client.create_order(
                     symbol=symbol, 
-                    side=Client.SIDE_BUY, 
-                    type=Client.ORDER_TYPE_LIMIT, 
-                    quantity=qty_to_buy, 
-                    timeInForce=Client.TIME_IN_FORCE_GTC, 
-                    price=ask_price
+                    side=Client.SIDE_SELL, 
+                    type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
+                    quantity=qty_to_sell, 
+                    price=sl_price, 
+                    stopPrice=sl_price, 
+                    timeInForce=Client.TIME_IN_FORCE_GTC
                 )
-                print("entry_order {}".format(entry_order))      
-                if entry_order is not None:
-                    qty_to_sell = round_down(client, symbol, float(entry_order["fills"][0]["qty"])-float(entry_order["fills"][0]["commission"]))                    
-                    sl_price = round_down_price(client, symbol, stop_price)
-                    stop_order = client.create_order(
-                        symbol=symbol, 
-                        side=Client.SIDE_SELL, 
-                        type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
-                        quantity=qty_to_sell, 
-                        price=sl_price, 
-                        stopPrice=sl_price, 
-                        timeInForce=Client.TIME_IN_FORCE_GTC
-                    )
-                    print("stop_order {}".format(stop_order))                                    
-                break               
+                print("stop_order {}".format(stop_order))                                    
+            break               
     return entry_order, qty_to_buy, stop_order, qty_to_sell
 
 

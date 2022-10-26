@@ -100,29 +100,32 @@ def _get_signal(r_df: DataFrame) -> str:
 def main ():
     entry_order = None
     stop_order = None
-    qty_to_buy = 0
     qty_to_sell = 0
     stop_price = 0
     while True:
+        logger.info('Making Renko Bricks')
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
-        signal = _get_signal(r_df)
 
+        logger.info('Waiting for signal')
+        signal = _get_signal(r_df)
+        
         if signal == SELL:
+            logger.info('SELL signal found')
             print('SELL')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] + BRICK_SIZE_10)
-            pass
-            
-            
+            pass                        
         elif signal == BUY:
+            logger.info('BUY signal found')
             print('BUY')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] - BRICK_SIZE_10)
             if entry_order is None:
+                logger.info('Trying to buy at best price as possible')
                 entry_order, _, stop_order, qty_to_sell = buy_spot_with_sl(client, symbol, volume, stop_price)
 
             print(f'entry_order: {entry_order}')
-            print(f'entry_order: {stop_order}')
+            print(f'stop_order: {stop_order}')
             logger.debug(f'entry_order: {entry_order}')
-            logger.debug(f'entry_order: {stop_order}')
+            logger.debug(f'stop_order: {stop_order}')
             if entry_order is not None and entry_order['status'] == 'FILLED':
                 while True:
                     r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
@@ -162,7 +165,7 @@ if __name__ == "__main__":
     # TODO: Create a Class for main loop
     while True:
         try:
-            main()            
+            main()          
         except Exception as e:
             print(e)
             continue
