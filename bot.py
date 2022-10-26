@@ -1,3 +1,4 @@
+from datetime import datetime
 from backtest import get_signals
 from dotenv import load_dotenv
 import os
@@ -6,6 +7,7 @@ from binance import Client
 from renko import Renko
 import pandas_ta as ta
 import logging
+from database import Database
 
 logging.basicConfig(filename="./std.log", 
 					format='%(asctime)s %(message)s', 
@@ -18,6 +20,7 @@ from utils import buy_spot_with_sl, round_down_price
 
 load_dotenv()
 
+database = Database()
 client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
 symbol='BTCUSDT'
 volume = 100 #USD
@@ -97,6 +100,12 @@ def _get_signal(r_df: DataFrame) -> str:
     return signal
 
 
+def saveSignal(signal):
+    logger.info(f'Signal: {signal}')
+    print("Signal: {}".format(signal))
+    database.insert('signal', signal)
+
+
 def main ():
     entry_order = None
     stop_order = None
@@ -108,12 +117,52 @@ def main ():
 
         logger.info('Waiting for signal')
         signal = _get_signal(r_df)
+
+        if signal is not None:
+            saveSignal({
+                'signal': signal, 
+                'date': datetime.now(),
+                'close': r_df.iloc[-1]['close']
+            })
+            signal = None
         
         if signal == SELL:
             logger.info('SELL signal found')
             print('SELL')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] + BRICK_SIZE_10)
-            pass                        
+            client.futures_change_leverage(symbol=symbol, leverage=1)
+            entry_order = client.futures_create_order(
+                symbol=symbol, 
+                side=Client.SIDE_SELL, 
+                type=Client.FUTURE_ORDER_TYPE_MARKET, 
+                quantity=qty_to_sell,
+                timeInForce=Client.TIME_IN_FORCE_GTC             
+            )
+            if entry_order is not None and entry_order['status'] == 'FILLED':
+                while True:
+                    r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
+                    signal = _get_signal(r_df)
+                    
+                    if signal == SELL:
+                        if stop_order is not None and stop_order['status'] == 'FILLED':
+                            break
+
+                        stop_price = r_df['DCM_5_5'][-1] - BRICK_SIZE_10
+                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+                        stop_order = client.create_order(
+                            symbol=symbol, 
+                            side=Client.SIDE_SELL, 
+                            type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
+                            quantity=qty_to_sell, 
+                            price=stop_price, 
+                            stopPrice=stop_price, 
+                            timeInForce=Client.TIME_IN_FORCE_GTC
+                        )
+                    else:
+                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+                        client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
+                        break                        
+
         elif signal == BUY:
             logger.info('BUY signal found')
             print('BUY')
