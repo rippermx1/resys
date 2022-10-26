@@ -59,16 +59,20 @@ def test_get_signal_buy():
     df = DataFrame({
             "STOCHk_14_2_4": [4, 2, 0, 7],            
             "STOCHd_14_2_4": [4, 2, 0, 5],
-            "type": ['down', 'down', 'down', 'up']
+            "type": ['down', 'down', 'down', 'up'],
+            "close": [95, 99, 96, 103],
+            "DCM_5_5": [100, 100, 100, 100]
         })
     assert _get_signal(df) == BUY
 
 
 def test_get_signal_sell():
     df = DataFrame({
-            "STOCHk_14_2_4": [96, 98, 100, 94],            
-            "STOCHd_14_2_4": [96, 98, 100, 96],
-            "type": ['up', 'up', 'up', 'down']
+            "STOCHk_14_2_4": [96, 98, 100, 93],            
+            "STOCHd_14_2_4": [96, 98, 100, 95],
+            "type": ['up', 'up', 'up', 'down'],
+            "close": [95, 99, 96, 95],
+            "DCM_5_5": [100, 100, 100, 100]
         })
     assert _get_signal(df) == SELL
 
@@ -77,7 +81,9 @@ def test_get_signal_none():
     df = DataFrame({
             "STOCHk_14_2_4": [5, 98, 100, 94],            
             "STOCHd_14_2_4": [96, 98, 100, 5],
-            "type": ['up', 'up', 'up', 'down']
+            "type": ['up', 'up', 'up', 'down'],
+            "close": [95, 99, 96, 99],
+            "DCM_5_5": [100, 100, 100, 100]
         })
     assert _get_signal(df) == None
 
