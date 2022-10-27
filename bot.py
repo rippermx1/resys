@@ -8,6 +8,7 @@ from renko import Renko
 import pandas_ta as ta
 import logging
 from database import Database
+from models import Signal
 
 logging.basicConfig(filename="./std.log", 
 					format='%(asctime)s %(message)s', 
@@ -74,6 +75,7 @@ def _close_below_dc(df: DataFrame) -> bool:
 
 # TODO: Refactor Technical Analysis to a function
 def _get_renko_bricks_df(brick_size: int, debug: bool = False) -> DataFrame:
+    logger.info('Building Renko Bricks')
     df = get_data()
     renko = Renko(brick_size, df['close'])
     renko.create_renko()
@@ -92,6 +94,7 @@ def _get_renko_bricks_df(brick_size: int, debug: bool = False) -> DataFrame:
 
 def _get_signal(r_df: DataFrame) -> str:
     ''' Determine signal '''
+    logger.info('Waiting for signal')
     signal = None
     if _is_turning_down(r_df) & _is_overbought(r_df) & _close_below_dc(r_df):
         signal = SELL
@@ -100,29 +103,29 @@ def _get_signal(r_df: DataFrame) -> str:
     return signal
 
 
-def _save_signal(signal):
-    logger.info(f'Signal: {signal}')
-    print("Signal: {}".format(signal))
-    database.insert('signal', signal)
+def _save_signal(s: Signal):
+    ''' Save signal Into Database '''
+    logger.info(f'Signal: {s}')
+    print("Signal: {}".format(s))
+    database.insert('signal', {
+        'side': s.side, 
+        'date': s.date,
+        'close': s.close,
+        'test': s.test
+    })
 
 
-def main ():
+def run():
     entry_order = None
     stop_order = None
     qty_to_sell = 0
     stop_price = 0
     while True:
-        logger.info('Making Renko Bricks')
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
-        logger.info('Waiting for signal')
         signal = _get_signal(r_df)
 
         if signal is not None:
-            _save_signal({
-                'signal': signal, 
-                'date': datetime.now(),
-                'close': r_df.iloc[-1]['close']
-            })            
+            _save_signal(Signal(signal, datetime.now(), r_df.iloc[-1]['close'], False))            
         
         if signal == SELL:
             logger.info('SELL signal found')
@@ -214,34 +217,13 @@ def main ():
 
 if __name__ == "__main__":
     # TODO: Create a Class for main loop
+    # TODO: Integrate kwargs for main loop (e.g. symbol, volume, brick_size, etc.)
     while True:
         try:
-            # main()          
-            """ entry_order = client.futures_create_order(
-                symbol=symbol, 
-                side=Client.SIDE_SELL, 
-                type=Client.FUTURE_ORDER_TYPE_MARKET, 
-                quantity=100,
-                positionSide="SHORT",                   
-            ) """
-            
-            print(stop_order)
+            run()                   
         except Exception as e:
             print(e)
             continue
-
-""" df = get_data()
-renko = Renko(10, df['close'])
-renko.create_renko() # renko.check_new_price(df['close'])
-r_df = DataFrame(renko.bricks)
-
-dc = DataFrame(ta.donchian(high=r_df['close'], low=r_df['close'] ,lower_length=5, upper_length=5)).drop(columns=['DCL_5_5', 'DCU_5_5'])
-r_df = r_df.join(dc)
-
-stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=4))
-r_df = r_df.join(stoch)
-
-print(get_signals(r_df)) """
 
 
 def backtest(df: DataFrame, lookback: int = 15):
