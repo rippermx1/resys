@@ -100,7 +100,7 @@ def _get_signal(r_df: DataFrame) -> str:
     return signal
 
 
-def saveSignal(signal):
+def _save_signal(signal):
     logger.info(f'Signal: {signal}')
     print("Signal: {}".format(signal))
     database.insert('signal', signal)
@@ -114,55 +114,66 @@ def main ():
     while True:
         logger.info('Making Renko Bricks')
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
-
         logger.info('Waiting for signal')
         signal = _get_signal(r_df)
 
         if signal is not None:
-            saveSignal({
+            _save_signal({
                 'signal': signal, 
                 'date': datetime.now(),
                 'close': r_df.iloc[-1]['close']
-            })
-            signal = None
+            })            
         
         if signal == SELL:
             logger.info('SELL signal found')
             print('SELL')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] + BRICK_SIZE_10)
-            client.futures_change_leverage(symbol=symbol, leverage=1)
-            entry_order = client.futures_create_order(
-                symbol=symbol, 
-                side=Client.SIDE_SELL, 
-                type=Client.FUTURE_ORDER_TYPE_MARKET, 
-                quantity=qty_to_sell,
-                timeInForce=Client.TIME_IN_FORCE_GTC             
-            )
+            if entry_order is None:
+                client.futures_change_leverage(symbol=symbol, leverage=1)
+                entry_order = client.futures_create_order(
+                    symbol=symbol, 
+                    side=Client.SIDE_SELL, 
+                    type=Client.FUTURE_ORDER_TYPE_MARKET, 
+                    quantity=qty_to_sell,
+                    timeInForce=Client.TIME_IN_FORCE_GTC             
+                )
+                stop_order = client.futures_create_order(
+                    symbol=symbol,
+                    side=Client.SIDE_BUY,
+                    type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+                    stopPrice=stop_price,
+                    timeInForce=Client.TIME_IN_FORCE_GTC,
+                    closePosition=True
+                )
+            
+            print(f'entry_order: {entry_order}')
+            print(f'stop_order: {stop_order}')
+            logger.debug(f'entry_order: {entry_order}')
+            logger.debug(f'stop_order: {stop_order}')
             if entry_order is not None and entry_order['status'] == 'FILLED':
                 while True:
                     r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
                     signal = _get_signal(r_df)
                     
-                    if signal == SELL:
+                    if signal == BUY:
+                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+                        client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
+                        break
+                    else:
                         if stop_order is not None and stop_order['status'] == 'FILLED':
                             break
 
-                        stop_price = r_df['DCM_5_5'][-1] - BRICK_SIZE_10
+                        stop_price = r_df['DCM_5_5'][-1] + BRICK_SIZE_10
                         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
-                        stop_order = client.create_order(
-                            symbol=symbol, 
-                            side=Client.SIDE_SELL, 
-                            type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
-                            quantity=qty_to_sell, 
-                            price=stop_price, 
-                            stopPrice=stop_price, 
-                            timeInForce=Client.TIME_IN_FORCE_GTC
+                        stop_order = client.futures_create_order(
+                            symbol=symbol,
+                            side=Client.SIDE_BUY,
+                            type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+                            stopPrice=stop_price,
+                            timeInForce=Client.TIME_IN_FORCE_GTC,
+                            closePosition=True
                         )
-                    else:
-                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
-                        client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
-                        break                        
-
+            
         elif signal == BUY:
             logger.info('BUY signal found')
             print('BUY')
@@ -198,23 +209,23 @@ def main ():
                             price=stop_price, 
                             stopPrice=stop_price, 
                             timeInForce=Client.TIME_IN_FORCE_GTC
-                        )                                                    
-
-                    
-                    
-
-
-        # TODO: Migrate to a service
-        # That let me plot renko levels at front over Bar Charts
-        # levels_df = DataFrame(detect_level_method_1(r_df))
-        # [print(x) for x in detect_level_method_1(r_df)]
+                        )                                                                        
 
 
 if __name__ == "__main__":
     # TODO: Create a Class for main loop
     while True:
         try:
-            main()          
+            # main()          
+            """ entry_order = client.futures_create_order(
+                symbol=symbol, 
+                side=Client.SIDE_SELL, 
+                type=Client.FUTURE_ORDER_TYPE_MARKET, 
+                quantity=100,
+                positionSide="SHORT",                   
+            ) """
+            
+            print(stop_order)
         except Exception as e:
             print(e)
             continue
