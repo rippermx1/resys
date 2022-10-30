@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from backtest import get_signals
 from dotenv import load_dotenv
 import os
@@ -22,12 +22,18 @@ from utils import buy_spot_with_sl, round_down_price
 load_dotenv()
 
 database = Database()
+database.initialize('resys')
 client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
 symbol='BTCUSDT'
 volume = 100 #USD
 
-def get_data():
-    data = client.get_klines(symbol="BTCUSDT", interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
+def _get_data(hist: bool = False, start_str: str = None, symbol: str = None) -> DataFrame:
+    data = None
+    if hist:
+        data = client.get_historical_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
+    else:
+        data = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
+    
     data = DataFrame(data)
     data = data.iloc[:,[0,1,2,3,4,5]]
     data.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -74,9 +80,9 @@ def _close_below_dc(df: DataFrame) -> bool:
 
 
 # TODO: Refactor Technical Analysis to a function
-def _get_renko_bricks_df(brick_size: int, debug: bool = False) -> DataFrame:
+def _get_renko_bricks_df(brick_size: int, debug: bool = False, symbol: str= None) -> DataFrame:
     logger.info('Building Renko Bricks')
-    df = get_data()
+    df = _get_data(hist= False, start_str= None, symbol=symbol)
     renko = Renko(brick_size, df['close'])
     renko.create_renko()
     r_df = DataFrame(renko.bricks)
@@ -115,13 +121,14 @@ def _save_signal(s: Signal):
     })
 
 
-def run():
+def run(symbol):
     entry_order = None
     stop_order = None
     qty_to_sell = 0
     stop_price = 0
+    signal = None
     while True:
-        r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
+        r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
         signal = _get_signal(r_df)
 
         if signal is not None:
@@ -218,9 +225,14 @@ def run():
 if __name__ == "__main__":
     # TODO: Create a Class for main loop
     # TODO: Integrate kwargs for main loop (e.g. symbol, volume, brick_size, etc.)
+    
+    """ dates = ['']
+
+    r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)
+    backtest(r_df) """
     while True:
         try:
-            run()                   
+            run(symbol)
         except Exception as e:
             print(e)
             continue
@@ -228,8 +240,12 @@ if __name__ == "__main__":
 
 def backtest(df: DataFrame, lookback: int = 15):
     ''' Backtest '''
-
+    in_short_position = False
+    in_long_position = False
+    signal = None
+    win, loss = 0, 0
     for i in range(lookback, len(df)):
+        # print(df.iloc[i])
         is_turning_down = df.iloc[i]['type'] == DOWN and df.iloc[i-1]['type'] == UP and df.iloc[i-2]['type'] == UP and df.iloc[i-3]['type'] == UP
         is_turning_up = df.iloc[i]['type'] == UP and df.iloc[i-1]['type'] == DOWN and df.iloc[i-2]['type'] == DOWN and df.iloc[i-3]['type'] == DOWN
 
@@ -239,14 +255,57 @@ def backtest(df: DataFrame, lookback: int = 15):
         s4 = df.iloc[i-3]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[i-3]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
         is_overbought = s1 and s2 and s3 and s4
 
+        close_above_dc = df.iloc[i]['close'] > df.iloc[i]['DCM_5_5']
+        close_under_dc = df.iloc[i]['close'] < df.iloc[i]['DCM_5_5']
+        
         b1 = df.iloc[i]['STOCHk_14_2_4'] > df.iloc[i]['STOCHd_14_2_4']
         b2 = df.iloc[i-1]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-1]['STOCHd_14_2_4'] < STOCH_OVERSOLD
         b3 = df.iloc[i-2]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-2]['STOCHd_14_2_4'] < STOCH_OVERSOLD
         b4 = df.iloc[i-3]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-3]['STOCHd_14_2_4'] < STOCH_OVERSOLD
         is_oversold = b1 and b2 and b3 and b4
 
-        if is_turning_down and is_overbought:
-            print('SELL')
-        if is_turning_up and is_oversold:
-            print('BUY')
+        if is_turning_down and is_overbought and close_under_dc and not in_short_position:
+            in_short_position = True
+            in_long_position = False
+            
+            signal = {
+                'side': 'SELL',
+                'entry_price': df.iloc[i]['close'],
+                'sl': df.iloc[i-1]['close'] + 20,
+                'tp': df.iloc[i-1]['close'] - 80,
+            }
+            print(f'SELL {signal}')
+                
+        if is_turning_up and is_oversold and close_above_dc and not in_long_position:
+            in_short_position = False
+            in_long_position = True
+            
+            signal = {
+                'side': 'BUY',
+                'entry_price': df.iloc[i]['close'],
+                'sl': df.iloc[i-1]['close'] - 20,
+                'tp': df.iloc[i-1]['close'] + 80,
+            }
+            print(f'BUY {signal}')
 
+        if in_short_position:
+            if df.iloc[i]['close'] >= signal['sl']:
+                in_short_position = False
+                loss += 1
+                print(f'STOP {df.iloc[i].close}')                            
+                
+            elif df.iloc[i]['close'] <= signal['tp']:
+                in_short_position = False
+                win += 1
+                print(f'PROFIT {df.iloc[i].close}')   
+        if in_long_position:
+            if df.iloc[i]['close'] <= signal['sl']:
+                in_short_position = False
+                loss += 1
+                print(f'STOP {df.iloc[i].close}')                            
+                
+            elif df.iloc[i]['close'] >= signal['tp']:
+                in_short_position = False
+                win += 1
+                print(f'PROFIT {df.iloc[i].close}')                            
+    print(f'win: {win} | loss: {loss}')
