@@ -9,16 +9,16 @@ class Database:
         self.client = MongoClient(os.getenv("LOCAL_MONGODB"))
         self.db = None
     
-    def initialize(self, ):
-        self.db = self.client['fullstack']
+    def initialize(self, db_name):
+        self.db = self.client[f'{db_name}']
     
     
     def insert(self, collection, data):
-        self.db[collection].insert(data)
+        self.db[collection].insert_one(data)
 
     
     def find(self, collection, query):
-        return self.db[collection].find(query)
+        return self.db["{}".format(collection)].find(query)
     
     
     def find_one(self, collection, query):
