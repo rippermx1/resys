@@ -1,4 +1,4 @@
-from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal, _close_above_dc, _close_below_dc
+from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal, _close_above_dc, _close_below_dc, _get_data
 from pandas import DataFrame
 
 from constants import BUY, SELL
@@ -118,3 +118,7 @@ def test_not_close_below_dc():
             "DCM_5_5": [100, 100, 100, 100]
         })
     assert _close_below_dc(df) == False
+
+
+def test_get_data():
+    assert _get_data(symbol='BTCUSDT') is not None
