@@ -124,6 +124,35 @@ def get_order_book(client: Client, symbol: str, market: str) -> DataFrame:
     return order_book
 
 
+def sell_spot_at_market(client: Client, symbol: str, quantity: float, stop_order):
+    try:
+        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+        client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=quantity)
+        logger.info(f"sell {symbol} {quantity}")
+    except Exception as e:
+        logger.error(e)
+
+
+def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float, quantity: float):
+    stop_order = None
+    try:
+        client.cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
+        stop_order = client.create_order(
+            symbol=symbol, 
+            side=Client.SIDE_SELL, 
+            type=Client.ORDER_TYPE_STOP_LOSS_LIMIT, 
+            quantity=quantity, 
+            price=new_stop_price, 
+            stopPrice=new_stop_price, 
+            timeInForce=Client.TIME_IN_FORCE_GTC
+        )
+        logger.info(f"update {symbol} sl {new_stop_price}")
+        return stop_order
+    except Exception as e:
+        logger.error(e)
+        return stop_order
+
+
 def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
     entry_order = None
     stop_order = None
@@ -170,8 +199,26 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
                     timeInForce=Client.TIME_IN_FORCE_GTC
                 )
                 print("stop_order {}".format(stop_order))                                    
-            break               
+            break    
     return entry_order, qty_to_buy, stop_order, qty_to_sell
+
+
+def sell_future_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
+    client.futures_change_leverage(symbol=symbol, leverage=50)
+    entry_order = client.futures_create_order(
+        symbol=symbol, 
+        side=Client.SIDE_SELL, 
+        type=Client.FUTURE_ORDER_TYPE_MARKET, 
+        quantity=volume,
+    )
+    stop_order = client.futures_create_order(
+        symbol=symbol,
+        side=Client.SIDE_BUY,
+        type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+        stopPrice=stop_price,                    
+        closePosition=True
+    )
+    return entry_order, stop_order 
 
 
 def get_klines_history(client: Client, symbol: str, interval: str, start_time: int, end_time: int):
