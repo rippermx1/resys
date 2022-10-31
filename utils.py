@@ -131,8 +131,10 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
     qty_to_sell = 0
     logger.info("Checking balance")
     balance = get_balance(client)
+    print(balance)
     if balance < volume:
         logger.info("Not enough balance to buy")
+        print("Not enough balance to buy")
         return entry_order, qty_to_buy, stop_order, qty_to_sell
 
     
