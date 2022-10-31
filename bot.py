@@ -122,16 +122,21 @@ def _save_signal(s: Signal):
 
 
 def run(symbol):
+    global in_buy_position
+    in_buy_position = False
     entry_order = None
     stop_order = None
-    qty_to_sell = 0
+    qty_to_sell = 30
     stop_price = 0
+    global signal
     signal = None
+    
     while True:
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
         signal = _get_signal(r_df)
 
         if signal is not None:
+            print(signal)
             _save_signal(Signal(signal, datetime.now(), r_df.iloc[-1]['close'], False))            
         
         if signal == SELL:
@@ -139,20 +144,18 @@ def run(symbol):
             print('SELL')
             stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] + BRICK_SIZE_10)
             if entry_order is None:
-                client.futures_change_leverage(symbol=symbol, leverage=1)
+                client.futures_change_leverage(symbol=symbol, leverage=50)
                 entry_order = client.futures_create_order(
                     symbol=symbol, 
                     side=Client.SIDE_SELL, 
                     type=Client.FUTURE_ORDER_TYPE_MARKET, 
                     quantity=qty_to_sell,
-                    timeInForce=Client.TIME_IN_FORCE_GTC             
                 )
                 stop_order = client.futures_create_order(
                     symbol=symbol,
                     side=Client.SIDE_BUY,
                     type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-                    stopPrice=stop_price,
-                    timeInForce=Client.TIME_IN_FORCE_GTC,
+                    stopPrice=stop_price,                    
                     closePosition=True
                 )
             
@@ -170,10 +173,10 @@ def run(symbol):
                         client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
                         break
                     else:
-                        if stop_order is not None and stop_order['status'] == 'FILLED':
+                        if stop_order is not None and client.get_order(symbol=symbol, orderId=stop_order['orderId'])['status'] == 'FILLED':
                             break
 
-                        stop_price = r_df['DCM_5_5'][-1] + BRICK_SIZE_10
+                        stop_price = r_df.iloc[-1]['DCM_5_5'] + BRICK_SIZE_10
                         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
                         stop_order = client.futures_create_order(
                             symbol=symbol,
@@ -184,10 +187,10 @@ def run(symbol):
                             closePosition=True
                         )
             
-        elif signal == BUY:
+        if signal == BUY and not in_buy_position:
             logger.info('BUY signal found')
             print('BUY')
-            stop_price = round_down_price(client, symbol, r_df.iloc[-2]['close'] - BRICK_SIZE_10)
+            stop_price = round_down_price(client, symbol, r_df.iloc[-1]['close'] - BRICK_SIZE_10)
             if entry_order is None:
                 logger.info('Trying to buy at best price as possible')
                 entry_order, _, stop_order, qty_to_sell = buy_spot_with_sl(client, symbol, volume, stop_price)
@@ -196,20 +199,31 @@ def run(symbol):
             print(f'stop_order: {stop_order}')
             logger.debug(f'entry_order: {entry_order}')
             logger.debug(f'stop_order: {stop_order}')
-            if entry_order is not None and entry_order['status'] == 'FILLED':
-                while True:
-                    r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
-                    signal = _get_signal(r_df)
-                    
-                    if signal == SELL:
-                        client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
-                        client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
-                        break
-                    else:
-                        if stop_order is not None and stop_order['status'] == 'FILLED':
-                            break
+            in_buy_position = True
 
-                        stop_price = r_df['DCM_5_5'][-1] - BRICK_SIZE_10
+        if entry_order is not None and entry_order['status'] == 'FILLED':                
+            while in_buy_position:
+                r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)        
+                signal = _get_signal(r_df)
+                print('Monitoring Transaction: ...')
+
+                if signal == SELL:
+                    print('Selling: ...')
+                    # TODO: Calculate distance between current close and entry_price to get PNL
+                    client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
+                    client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=qty_to_sell)
+                    in_buy_position = False
+                    break
+                else:                        
+                    if stop_order is not None and client.get_order(symbol=symbol, orderId=stop_order['orderId'])['status'] == 'FILLED':
+                        break
+                    
+                    print('Updating Stop Loss Order: ...')
+                    # TODO: calculate distance between entry_price and current close to get PNL
+                    distance_ptc = round((abs(r_df.iloc[-1]['DCM_5_5'] - r_df.iloc[-2]['close'])/r_df.iloc[-1]['DCM_5_5'])*100, 2)
+                    print(distance_ptc)
+                    if distance_ptc >= 0.1:
+                        stop_price = r_df.iloc[-1]['DCM_5_5'] - BRICK_SIZE_10
                         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
                         stop_order = client.create_order(
                             symbol=symbol, 
@@ -226,10 +240,26 @@ if __name__ == "__main__":
     # TODO: Create a Class for main loop
     # TODO: Integrate kwargs for main loop (e.g. symbol, volume, brick_size, etc.)
     
-    """ dates = ['']
-
-    r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True)
-    backtest(r_df) """
+    """ client.futures_change_leverage(symbol=symbol, leverage=1)
+    entry_order = client.futures_create_order(
+        symbol=symbol, 
+        side=Client.SIDE_SELL, 
+        type=Client.FUTURE_ORDER_TYPE_MARKET, 
+        quantity=30,
+        # timeInForce=Client.TIME_IN_FORCE_GTC             
+    )
+    print(entry_order)
+    pass
+    stop_order = client.futures_create_order(
+        symbol=symbol,
+        side=Client.SIDE_BUY,
+        type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+        stopPrice=20900,
+        # timeInForce=Client.TIME_IN_FORCE_GTC,
+        closePosition=True
+    )
+    print(stop_order) """
+    
     while True:
         try:
             run(symbol)
