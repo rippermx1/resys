@@ -20,8 +20,6 @@ from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, updat
 
 load_dotenv()
 
-database = Database()
-database.initialize('resys')
 client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
 symbol='BTCUSDT'
 volume = 100 #USD
@@ -110,38 +108,53 @@ def _get_signal(r_df: DataFrame) -> str:
 
 def _save_signal(s: Signal):
     ''' Save signal Into Database '''
-    logger.info(f'Signal: {s}')
-    print("Signal: {}".format(s))
-    database.insert('signal', {
-        'side': s.side, 
-        'date': s.date,
-        'close': s.close,
-        'test': s.test
-    })
+    if signal is not None:
+        logger.info(f'Signal: {s}')
+        print("Signal: {}".format(s))
+        database = Database()
+        database.initialize('resys')
+        database.insert('signal', {
+            'side': s.side, 
+            'date': s.date,
+            'close': s.close,
+            'test': s.test
+        })
+
+
+def _is_bot_live(debug: bool = False) -> bool:
+    ''' Determine if bot is live '''
+    database = Database()
+    database.initialize('resys')
+    resys_config = database.find_one('config', None)
+    is_live = resys_config['is_live']
+    logger.info(f'Is Live: {is_live}')
+    if debug:
+        print("is_live: {}".format(resys_config))
+    return is_live
 
 
 def run(symbol):
     global in_buy_position
     in_buy_position = False
     global in_sell_position
-    in_sell_position = True
-    entry_order = None
-    stop_order = None
-    qty_to_sell = 30
-    stop_price = 0
+    in_sell_position = False
     global signal
     signal = None
+    
+    entry_order = None
+    stop_order = None
+    qty_to_sell = 100
+    stop_price = 0
+    
 
-    # TODO: Get is_live from DB
-    resys_config = database.find_one('config', None)
-    is_live = resys_config['is_live']
+    is_live = _is_bot_live()
     while is_live:
+        is_live = _is_bot_live()
+        
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
         signal = _get_signal(r_df)
-
-        if signal is not None:
-            print(signal)
-            _save_signal(Signal(signal, datetime.now(), r_df.iloc[-1]['close'], False))            
+    
+        _save_signal(Signal(signal, datetime.now(), r_df.iloc[-1]['close'], False))            
         
         if signal == SELL and not in_sell_position:
             logger.info('SELL signal found')
@@ -166,30 +179,34 @@ def run(symbol):
             logger.debug(f'stop_order: {stop_order}')
             in_buy_position = True
 
-        if entry_order is not None and entry_order['status'] == 'FILLED' and in_buy_position:                
-            while in_buy_position:
-                r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
-                signal = _get_signal(r_df)
-                print('Monitoring Transaction: ...')
+        """ if entry_order['status'] == 'FILLED' and in_buy_position:
+            watch_position(entry_order, stop_order, symbol, qty_to_sell, stop_price, client) """       
 
-                if signal == SELL:
-                    print('Selling: ...')
-                    # TODO: Calculate distance between current close and entry_price to get PNL
-                    sell_spot_at_market(client, symbol, qty_to_sell, stop_order)
-                    in_buy_position = False
-                    break
-                else:                        
-                    if stop_order is not None and client.get_order(symbol=symbol, orderId=stop_order['orderId'])['status'] == 'FILLED':
-                        in_buy_position = False
-                        break
-                    
-                    print('Updating Stop Loss Order: ...')
-                    # TODO: calculate distance between entry_price and current close to get PNL
-                    distance_ptc = round((abs(r_df.iloc[-1]['DCM_5_5'] - r_df.iloc[-2]['close'])/r_df.iloc[-1]['DCM_5_5'])*100, 2)
-                    print(distance_ptc)
-                    if distance_ptc >= 0.1:
-                        new_stop_price = r_df.iloc[-1]['DCM_5_5'] - BRICK_SIZE_10
-                        stop_order = update_spot_sl(client, symbol, stop_order, new_stop_price, qty_to_sell)        
+
+def watch_buy_position(position):
+    while in_buy_position:
+        r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
+        signal = _get_signal(r_df)
+        print('Monitoring Transaction: ...')
+
+        if signal == SELL:
+            print('Selling: ...')
+            # TODO: Calculate distance between current close and entry_price to get PNL
+            sell_spot_at_market(client, symbol, qty_to_sell, stop_order)
+            in_buy_position = False
+            break
+        else:                        
+            if stop_order is not None and client.get_order(symbol=symbol, orderId=stop_order['orderId'])['status'] == 'FILLED':
+                in_buy_position = False
+                break
+            
+            print('Updating Stop Loss Order: ...')
+            # TODO: calculate distance between entry_price and current close to get PNL
+            distance_ptc = round((abs(r_df.iloc[-1]['DCM_5_5'] - r_df.iloc[-2]['close'])/r_df.iloc[-1]['DCM_5_5'])*100, 2)
+            print(distance_ptc)
+            if distance_ptc >= 0.1:
+                new_stop_price = r_df.iloc[-1]['DCM_5_5'] - BRICK_SIZE_10
+                stop_order = update_spot_sl(client, symbol, stop_order, new_stop_price, qty_to_sell)
 
 
 if __name__ == "__main__":

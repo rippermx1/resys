@@ -2,6 +2,7 @@ from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, 
 from pandas import DataFrame
 
 from constants import BUY, SELL
+from database import Database
 
 def test_is_overbought():
     df = DataFrame({
@@ -122,3 +123,11 @@ def test_not_close_below_dc():
 
 def test_get_data():
     assert _get_data(symbol='BTCUSDT') is not None
+
+
+def test_is_bot_live():
+    database = Database()
+    database.initialize('resys')
+    resys_config = database.find_one('config', None)
+    assert resys_config['is_live'] == True
+
