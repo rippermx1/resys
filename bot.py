@@ -115,9 +115,9 @@ class ReSys:
 
     def _save_signal(self, signal: Signal):
         ''' Save signal Into Database '''
+        print("Signal: {}".format(signal.side))
         if signal.side is not None:
             self.logger.info(f'Signal: {signal}')
-            print("Signal: {}".format(signal))
             database = Database()
             database.initialize('resys')
             database.insert('signal', {
@@ -147,7 +147,6 @@ class ReSys:
             
             r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=self.debug, symbol=self.symbol)        
             self.signal = self._get_signal(r_df)
-            
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
             
             if self.signal == SELL and not self.in_short_position:
@@ -158,10 +157,10 @@ class ReSys:
                 self.logger.info('BUY signal found')
                 self._open_spot_position(r_df.iloc[-2]['close'] - BRICK_SIZE_10)
 
-            if self.spot_entry_order['status'] == 'FILLED' and self.in_spot_position:
+            if self.spot_entry_order is not None and self.spot_entry_order['status'] == 'FILLED' and self.in_spot_position:
                 self._watch_spot_position()
 
-            if self.short_entry_order['status'] == 'FILLED' and self.in_short_position:
+            if self.short_entry_order is not None and self.short_entry_order['status'] == 'FILLED' and self.in_short_position:
                 self._watch_short_position()
 
 
