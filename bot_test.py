@@ -1,5 +1,8 @@
-from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up
+from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal, _close_above_dc, _close_below_dc, _get_data
 from pandas import DataFrame
+
+from constants import BUY, SELL
+from database import Database
 
 def test_is_overbought():
     df = DataFrame({
@@ -51,3 +54,80 @@ def test_is_turning_up():
 def test_is_not_turning_up():
     df = DataFrame({ "type": ['up', 'down', 'down', 'up'] })
     assert _is_turning_up(df) == False
+
+
+def test_get_signal_buy():
+    df = DataFrame({
+            "STOCHk_14_2_4": [4, 2, 0, 7],            
+            "STOCHd_14_2_4": [4, 2, 0, 5],
+            "type": ['down', 'down', 'down', 'up'],
+            "close": [95, 99, 96, 103],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _get_signal(df) == BUY
+
+
+def test_get_signal_sell():
+    df = DataFrame({
+            "STOCHk_14_2_4": [96, 98, 100, 93],            
+            "STOCHd_14_2_4": [96, 98, 100, 95],
+            "type": ['up', 'up', 'up', 'down'],
+            "close": [95, 99, 96, 95],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _get_signal(df) == SELL
+
+
+def test_get_signal_none():
+    df = DataFrame({
+            "STOCHk_14_2_4": [5, 98, 100, 94],            
+            "STOCHd_14_2_4": [96, 98, 100, 5],
+            "type": ['up', 'up', 'up', 'down'],
+            "close": [95, 99, 96, 99],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _get_signal(df) == None
+
+
+def test_close_above_dc():
+    df = DataFrame({
+            "close": [100, 101, 102, 103],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_above_dc(df) == True
+
+
+def test_not_close_above_dc():
+    df = DataFrame({
+            "close": [95, 99, 100, 95],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_above_dc(df) == False
+
+
+def test_close_below_dc():
+    df = DataFrame({
+            "close": [100, 98, 95, 90],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_below_dc(df) == True
+
+
+def test_not_close_below_dc():
+    df = DataFrame({
+            "close": [95, 99, 96, 103],
+            "DCM_5_5": [100, 100, 100, 100]
+        })
+    assert _close_below_dc(df) == False
+
+
+def test_get_data():
+    assert _get_data(symbol='BTCUSDT') is not None
+
+
+def test_is_bot_live():
+    database = Database()
+    database.initialize('resys')
+    resys_config = database.find_one('config', None)
+    assert resys_config['is_live'] == True
+

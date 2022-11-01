@@ -1,0 +1,9 @@
+SPOT = 'spot'
+FUTURE = 'future'
+STOCH_OVERBOUGHT = 95
+STOCH_OVERSOLD   = 5
+UP   = 'up'
+DOWN = 'down'
+BRICK_SIZE_10 = 10
+SELL = 'sell'
+BUY  = 'buy'
