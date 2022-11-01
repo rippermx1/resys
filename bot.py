@@ -22,7 +22,7 @@ class ReSys:
         self.volume = volume
         self.debug = False
         self.signal = None
-        self.is_live = False
+        self.is_live = self._is_bot_live()
         self.short_entry_order = None
         self.short_sl_order = None
         self.spot_entry_order = None
@@ -141,7 +141,6 @@ class ReSys:
 
 
     def run(self):
-        self.is_live = self._is_bot_live()
         while self.is_live:
             self.is_live = self._is_bot_live()
             
