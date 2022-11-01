@@ -1,0 +1,22 @@
+[{
+  "_id": {
+    "$oid": "63606a61978acd34b83bbe71"
+  },
+  "public_key": "hklgGFmFXkJJqGMOfN5GUXZnfbRhJBEPpRxJ3PMa3Ary3ro5oRkiCRx0EXdn2u1C",
+  "secret_key": "Pdd7zwaRj9RjWQWd6mi2NTp4LDxzh8lnxgMiBRIic4X8cRWahKgGHQuyRe95RqPZ",
+  "accept_terms": true,
+  "active": true,
+  "enable": true,
+  "rut": "186564391",
+  "passport": "",
+  "email": "",
+  "cellphone": "56976641684",
+  "vip": true,
+  "admin": true,
+  "permission": [
+    "READ",
+    "WRITE",
+    "EXEC",
+    "DEL"
+  ]
+}]
