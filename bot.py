@@ -1,5 +1,4 @@
-from datetime import date, datetime
-from backtest import get_signals
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 from pandas import DataFrame
@@ -16,7 +15,7 @@ logging.basicConfig(filename="./std.log",
 logger=logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-from constants import BRICK_SIZE_10, BUY, DOWN, SELL, SPOT, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
+from constants import BRICK_SIZE_10, BUY, DOWN, SELL, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
 from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, sell_future_with_sl
 
 load_dotenv()
@@ -124,16 +123,19 @@ def _save_signal(s: Signal):
 def run(symbol):
     global in_buy_position
     in_buy_position = False
-    global in_buy_position
-    in_buy_position = True
+    global in_sell_position
+    in_sell_position = True
     entry_order = None
     stop_order = None
     qty_to_sell = 30
     stop_price = 0
     global signal
     signal = None
-    
-    while True:
+
+    # TODO: Get is_live from DB
+    resys_config = database.find_one('config', None)
+    is_live = resys_config['is_live']
+    while is_live:
         r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
         signal = _get_signal(r_df)
 
@@ -164,7 +166,7 @@ def run(symbol):
             logger.debug(f'stop_order: {stop_order}')
             in_buy_position = True
 
-        if entry_order is not None and entry_order['status'] == 'FILLED':                
+        if entry_order is not None and entry_order['status'] == 'FILLED' and in_buy_position:                
             while in_buy_position:
                 r_df = _get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=symbol)        
                 signal = _get_signal(r_df)
@@ -193,26 +195,6 @@ def run(symbol):
 if __name__ == "__main__":
     # TODO: Create a Class for main loop
     # TODO: Integrate kwargs for main loop (e.g. symbol, volume, brick_size, etc.)
-    
-    """ client.futures_change_leverage(symbol=symbol, leverage=1)
-    entry_order = client.futures_create_order(
-        symbol=symbol, 
-        side=Client.SIDE_SELL, 
-        type=Client.FUTURE_ORDER_TYPE_MARKET, 
-        quantity=30,
-        # timeInForce=Client.TIME_IN_FORCE_GTC             
-    )
-    print(entry_order)
-    pass
-    stop_order = client.futures_create_order(
-        symbol=symbol,
-        side=Client.SIDE_BUY,
-        type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-        stopPrice=20900,
-        # timeInForce=Client.TIME_IN_FORCE_GTC,
-        closePosition=True
-    )
-    print(stop_order) """
     
     while True:
         try:
