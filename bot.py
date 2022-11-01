@@ -5,21 +5,15 @@ from pandas import DataFrame
 from binance import Client
 from renko import Renko
 import pandas_ta as ta
-import logging
+
 from database import Database
 from models import Signal
-
-logging.basicConfig(filename="./std.log", 
-					format='%(asctime)s %(message)s', 
-					filemode='w')
-logger=logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
 from constants import BRICK_SIZE_10, BUY, DOWN, SELL, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
 from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, sell_future_with_sl
-
 load_dotenv()
 
+
+logger = Logger()
 client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
 symbol='BTCUSDT'
 volume = 100 #USD
