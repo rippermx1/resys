@@ -1,7 +1,6 @@
-from typing import Dict
 from pandas import DataFrame
 import numpy as np
-from constants import SPOT, FUTURE
+from constants import FUTURES, SPOT
 from binance import Client
 import math
 import logging
@@ -119,8 +118,8 @@ def get_order_book(client: Client, symbol: str, market: str) -> DataFrame:
     order_book = None
     if market == SPOT:
         order_book = DataFrame(client.get_order_book(symbol=symbol, limit=10))
-    elif market == FUTURE:
-        order_book = DataFrame(client.futures_order_book(symbol=symbol, limit=10))
+    if market == FUTURES:
+        order_book = DataFrame(client.futures_order_book(symbol=symbol, limit=10)).iloc[:,[3,4]]
     return order_book
 
 
@@ -151,6 +150,31 @@ def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: 
     except Exception as e:
         logger.error(e)
         return stop_order
+
+
+def update_short_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float):
+    stop_order = None
+    try:
+        client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
+        stop_order = client.futures_create_order(
+            symbol=symbol,
+            side=Client.SIDE_BUY,
+            type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+            stopPrice=new_stop_price,                    
+            closePosition=True
+        )
+        logger.info(f"update {symbol} sl {new_stop_price}")
+        return stop_order
+    except Exception as e:
+        logger.error(e)
+        return stop_order
+
+
+def get_order_status(client: Client, order, market: str):
+    if market == SPOT:
+        return client.get_order(symbol=order['symbol'], orderId=order['orderId'])['status']
+    if market == FUTURES:
+        return client.futures_get_order(symbol=order['symbol'], orderId=order['orderId'])['status']
 
 
 def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
@@ -203,22 +227,50 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
     return entry_order, qty_to_buy, stop_order, qty_to_sell
 
 
-def sell_future_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
-    client.futures_change_leverage(symbol=symbol, leverage=50)
-    entry_order = client.futures_create_order(
-        symbol=symbol, 
-        side=Client.SIDE_SELL, 
-        type=Client.FUTURE_ORDER_TYPE_MARKET, 
-        quantity=volume,
-    )
-    stop_order = client.futures_create_order(
+def sell_future_with_sl(client: Client, symbol: str, volume: int, stop_price: float, leverage: int):
+    client.futures_change_leverage(symbol=symbol, leverage=leverage)
+    volume = volume * leverage
+    
+    order_book = get_order_book(client, symbol, FUTURES)
+    for i in range(len(order_book)):
+        bid_price = float(order_book.iloc[i].bids[0])
+        bid_liquidity = float(order_book.iloc[i].bids[1])
+        qty_to_sell = round(round_down(client, symbol, (volume / bid_price)), 3)
+        
+        logger.info(f'Trying to get best price: {bid_price}')
+        if qty_to_sell < bid_liquidity:
+            print(qty_to_sell)
+            logger.info(f'Selling {symbol} at FUTURE with Volume={volume}USDT at Price {bid_price}')
+            entry_order = client.futures_create_order(
+                symbol=symbol, 
+                side=Client.SIDE_SELL, 
+                type=Client.FUTURE_ORDER_TYPE_MARKET, 
+                quantity=qty_to_sell,
+            )
+            # print("entry_order {}".format(entry_order))      
+            if entry_order is not None:
+                sl_price = round_down_price(client, symbol, stop_price)
+                logger.info(f'Stop Buy {symbol} at FUTURE with Volume={qty_to_sell}BTC at Price {sl_price}')
+                stop_order = client.futures_create_order(
+                    symbol=symbol,
+                    side=Client.SIDE_BUY,
+                    type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+                    stopPrice=stop_price,                    
+                    closePosition=True
+                )
+                # print("stop_order {}".format(stop_order))                                    
+            break    
+    return entry_order, stop_order, bid_price
+
+
+def buy_future_with_tp(client: Client, symbol: str, take_profit_price: float):
+    return client.futures_create_order(
         symbol=symbol,
         side=Client.SIDE_BUY,
-        type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-        stopPrice=stop_price,                    
+        type=Client.FUTURE_ORDER_TYPE_TAKE_PROFIT_MARKET,
+        stopPrice=take_profit_price,                    
         closePosition=True
     )
-    return entry_order, stop_order 
 
 
 def get_klines_history(client: Client, symbol: str, interval: str, start_time: int, end_time: int):
