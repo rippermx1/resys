@@ -1,5 +1,5 @@
 SPOT = 'spot'
-FUTURE = 'future'
+FUTURES = 'futures'
 STOCH_OVERBOUGHT = 95
 STOCH_OVERSOLD   = 5
 UP   = 'up'
