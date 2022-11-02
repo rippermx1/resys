@@ -9,29 +9,28 @@ import pandas_ta as ta
 from database import Database
 from models import Signal
 from logger import Logger
-from constants import BRICK_SIZE_10, BUY, DOWN, FUTURES, SELL, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
+from constants import BRICK_SIZE_10, BUY, DATABASE_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP
 from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, sell_future_with_sl, update_short_sl, get_order_status, buy_future_with_tp
 load_dotenv()
 
 class ReSys:
 
     def __init__(self, client, symbol, volume):
-        self.logger = Logger().logger
+        self.logger = Logger().log
         self.client = client
         self.symbol = symbol
         self.volume = volume
         self.debug = False
         self.signal = None
+        self.signal_saved = False
         self.is_live = self._is_bot_live()
-        self.short_entry_order = None
-        self.short_sl_order = None
-        self.spot_entry_order = None
-        self.spot_sl_order = None
-        self.short_sl_price = None
-        self.spot_sl_price = None
-        self.in_spot_position = False
-        self.in_short_position = False
-        self.short_bid_price = None
+
+        self.entry_order = None
+        self.sl_order = None
+        self.sl_price = None
+        self.bid_price = None
+        
+        self.in_position = False
 
     def _get_data(self, hist: bool = False, start_str: str = None, symbol: str = None) -> DataFrame:
         data = None
@@ -50,18 +49,18 @@ class ReSys:
     def _is_overbought(self, df: DataFrame) -> bool:
         ''' Determine if is overbought '''
         s1 = df.iloc[-1]['STOCHk_14_2_4'] < df.iloc[-1]['STOCHd_14_2_4']
-        s2 = df.iloc[-2]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[-2]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
-        s3 = df.iloc[-3]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[-3]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
-        s4 = df.iloc[-4]['STOCHk_14_2_4'] > STOCH_OVERBOUGHT and df.iloc[-4]['STOCHd_14_2_4'] > STOCH_OVERBOUGHT
+        s2 = df.iloc[-2]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-2]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
+        s3 = df.iloc[-3]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-3]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
+        s4 = df.iloc[-4]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-4]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
         return s1 and s2 and s3 and s4
 
 
     def _is_oversold(self, df: DataFrame) -> bool:
         ''' Determine if is oversold '''
         b1 = df.iloc[-1]['STOCHk_14_2_4'] > df.iloc[-1]['STOCHd_14_2_4']
-        b2 = df.iloc[-2]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-2]['STOCHd_14_2_4'] < STOCH_OVERSOLD
-        b3 = df.iloc[-3]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-3]['STOCHd_14_2_4'] < STOCH_OVERSOLD
-        b4 = df.iloc[-4]['STOCHk_14_2_4'] < STOCH_OVERSOLD and df.iloc[-4]['STOCHd_14_2_4'] < STOCH_OVERSOLD
+        b2 = df.iloc[-2]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-2]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
+        b3 = df.iloc[-3]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-3]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
+        b4 = df.iloc[-4]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-4]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
         return b1 and b2 and b3 and b4
 
 
@@ -117,22 +116,23 @@ class ReSys:
     def _save_signal(self, signal: Signal):
         ''' Save signal Into Database '''
         print("Signal: {}".format(signal.side))
-        if signal.side is not None:
+        if signal.side is not None and not self.signal_saved:
             self.logger.info(f'Signal: {signal}')
             database = Database()
-            database.initialize('resys')
+            database.initialize(DATABASE_RESYS)
             database.insert('signal', {
                 'side': signal.side, 
                 'date': signal.date,
                 'close': signal.close,
                 'test': signal.test
             })
+            self.signal_saved = True
 
 
     def _is_bot_live(self, debug: bool = False) -> bool:
         ''' Determine if bot is live '''
         database = Database()
-        database.initialize('resys')
+        database.initialize(DATABASE_RESYS)
         resys_config = database.find_one('config', None)
         is_live = resys_config['is_live']
         self.logger.info(f'Is Live: {is_live}')
@@ -149,20 +149,11 @@ class ReSys:
             self.signal = self._get_signal(r_df)
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
             
-            self.signal = SELL
-            if self.signal == SELL and not self.in_short_position:
-                self.logger.info('SELL signal found')
-                self._open_short_position(r_df.iloc[-2]['close'] + BRICK_SIZE_10, volume=10)
-                
-            if self.signal == BUY and not self.in_spot_position:
-                self.logger.info('BUY signal found')
-                self._open_spot_position(r_df.iloc[-2]['close'] - BRICK_SIZE_10, volume=100)
+            self._open_position(r_df.iloc[-2]['close'] + BRICK_SIZE_10, volume=10)
+                      
 
-            """ if self.spot_entry_order is not None and self.spot_entry_order['status'] == 'FILLED' and self.in_spot_position:
-                self._watch_spot_position() """
-
-            if self.short_entry_order is not None and self.in_short_position:
-                self._watch_short_position()
+            if self.entry_order is not None and self.in_position:
+                self._watch_position()
 
 
     def _open_spot_position(self, close_price, volume):
@@ -176,8 +167,10 @@ class ReSys:
         self.in_spot_position = True
 
 
-    def _open_short_position(self, sl_price, volume):
+    def _open_position(self, sl_price, volume):
+        self.logger.info('SELL signal found')
         print('SELL')
+        if self.signal == SELL and not self.in_position:
         if self.short_entry_order is None:
             self.short_sl_price = round_down_price(self.client, self.symbol, sl_price)
             self.short_entry_order, self.short_sl_order, self.short_bid_price = sell_future_with_sl(self.client, self.symbol, volume, self.short_sl_price, leverage=10)
@@ -200,6 +193,7 @@ class ReSys:
                 self.in_short_position = False
                 self.short_sl_order = None
                 self.short_entry_order = None
+                self.signal_saved = False
                 break
             else:      
                 status = get_order_status(self.client, self.short_sl_order, FUTURES)
@@ -209,6 +203,7 @@ class ReSys:
                     self.in_short_position = False
                     self.short_sl_order = None
                     self.short_entry_order = None
+                    self.signal_saved = False
                     break
 
                 print('Updating Stop Loss Order: ...')
