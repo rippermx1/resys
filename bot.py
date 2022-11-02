@@ -9,8 +9,8 @@ import pandas_ta as ta
 from database import Database
 from models import Signal
 from logger import Logger
-from constants import BRICK_SIZE_10, BUY, DOWN, SELL, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
-from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, sell_future_with_sl
+from constants import BRICK_SIZE_10, BUY, DOWN, FUTURES, SELL, STOCH_OVERBOUGHT, STOCH_OVERSOLD, UP
+from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, sell_future_with_sl, update_short_sl, get_order_status, buy_future_with_tp
 load_dotenv()
 
 class ReSys:
@@ -31,6 +31,7 @@ class ReSys:
         self.spot_sl_price = None
         self.in_spot_position = False
         self.in_short_position = False
+        self.short_bid_price = None
 
     def _get_data(self, hist: bool = False, start_str: str = None, symbol: str = None) -> DataFrame:
         data = None
@@ -148,18 +149,19 @@ class ReSys:
             self.signal = self._get_signal(r_df)
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
             
+            self.signal = SELL
             if self.signal == SELL and not self.in_short_position:
                 self.logger.info('SELL signal found')
-                self._open_short_position(r_df.iloc[-2]['close'] + BRICK_SIZE_10)
+                self._open_short_position(r_df.iloc[-2]['close'] + BRICK_SIZE_10, volume=10)
                 
             if self.signal == BUY and not self.in_spot_position:
                 self.logger.info('BUY signal found')
-                self._open_spot_position(r_df.iloc[-2]['close'] - BRICK_SIZE_10)
+                self._open_spot_position(r_df.iloc[-2]['close'] - BRICK_SIZE_10, volume=100)
 
-            if self.spot_entry_order is not None and self.spot_entry_order['status'] == 'FILLED' and self.in_spot_position:
-                self._watch_spot_position()
+            """ if self.spot_entry_order is not None and self.spot_entry_order['status'] == 'FILLED' and self.in_spot_position:
+                self._watch_spot_position() """
 
-            if self.short_entry_order is not None and self.short_entry_order['status'] == 'FILLED' and self.in_short_position:
+            if self.short_entry_order is not None and self.in_short_position:
                 self._watch_short_position()
 
 
@@ -167,26 +169,61 @@ class ReSys:
         print('BUY')
         if self.spot_entry_order is None:
             self.spot_sl_price = round_down_price(self.client, self.symbol, close_price)
-            self.spot_entry_order, _, self.spot_sl_order, _ = buy_spot_with_sl(self.client, self.symbol, self.volume, self.spot_sl_price)
+            self.spot_entry_order, _, self.spot_sl_order, _ = buy_spot_with_sl(self.client, self.symbol, volume, self.spot_sl_price)
 
         self.logger.debug(f'entry_order: {self.spot_entry_order}')
         self.logger.debug(f'stop_order: {self.spot_sl_order}')
         self.in_spot_position = True
 
 
-    def _open_short_position(self, close_price, volume):
+    def _open_short_position(self, sl_price, volume):
         print('SELL')
         if self.short_entry_order is None:
-            self.short_sl_price = round_down_price(self.client, self.symbol, close_price)
-            self.short_entry_order, self.short_sl_order = sell_future_with_sl(self.client, self.symbol, volume, self.short_sl_price)
+            self.short_sl_price = round_down_price(self.client, self.symbol, sl_price)
+            self.short_entry_order, self.short_sl_order, self.short_bid_price = sell_future_with_sl(self.client, self.symbol, volume, self.short_sl_price, leverage=10)
         
         self.logger.debug(f'entry_order: {self.short_entry_order}')
         self.logger.debug(f'stop_order: {self.short_sl_order}')
         self.in_short_position = True
 
 
-    def _watch_short_position(self, position):
-        pass
+    def _watch_short_position(self):
+        while self.in_short_position:
+            r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=self.symbol)        
+            signal = self._get_signal(r_df)
+            print('Monitoring Transaction: ...')
+
+            if signal == BUY:
+                print('Selling: ...')
+                # TODO: Calculate distance between current close and entry_price to get PNL
+                buy_future_with_tp(self.client, self.symbol, r_df.iloc[-1]['close'] + BRICK_SIZE_10)
+                self.in_short_position = False
+                self.short_sl_order = None
+                self.short_entry_order = None
+                break
+            else:      
+                status = get_order_status(self.client, self.short_sl_order, FUTURES)
+                print(status)
+                if status == 'FILLED' or status == 'CANCELED':
+                    print('EXIT BY STOP LOSS')
+                    self.in_short_position = False
+                    self.short_sl_order = None
+                    self.short_entry_order = None
+                    break
+
+                print('Updating Stop Loss Order: ...')
+                # TODO: calculate distance between entry_price and current close to get PNL
+                distance_ptc = round((abs(self.short_bid_price - r_df.iloc[-1]['close'])/self.short_bid_price)*100, 2)
+                print(distance_ptc)
+                if distance_ptc >= 0.15:
+                    new_stop_price = r_df.iloc[-1]['DCM_5_5'] - BRICK_SIZE_10
+                    self.short_sl_price = new_stop_price
+                    self.short_sl_order = update_short_sl(
+                        self.client,
+                        self.symbol,
+                        self.short_sl_order,
+                        self.short_sl_price
+                    )
     
 
     def _watch_spot_position(self):
