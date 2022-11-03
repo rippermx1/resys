@@ -157,6 +157,7 @@ def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float
     stop_order = None
     try:
         client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
+        print(side)
         stop_order = client.futures_create_order(
             symbol=symbol,
             side=side,
@@ -265,10 +266,10 @@ def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: 
     return entry_order, stop_order, level_price
 
 
-def close_position_with_tp(client: Client, symbol: str, take_profit_price: float):
+def close_position_with_tp(client: Client, symbol: str, take_profit_price: float, side: str):
     return client.futures_create_order(
         symbol=symbol,
-        side=Client.SIDE_BUY,
+        side=Client.SIDE_BUY if side == SELL else Client.SIDE_SELL,
         type=Client.FUTURE_ORDER_TYPE_TAKE_PROFIT_MARKET,
         stopPrice=take_profit_price,                    
         closePosition=True

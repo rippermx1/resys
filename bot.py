@@ -155,9 +155,10 @@ class ReSys:
         # TODO: calculate distance between entry_price and current close to get PNL
         distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 2)
         print(distance)
-        if distance > 0.15:
+        if distance > 0.001:
             mid = renko_blocks.iloc[-1]['DCM_5_5']
-            self.sl_price = (mid - BRICK_SIZE_10) if side == BUY else (mid + BRICK_SIZE_10)
+            self.sl_price = round_down_price(self.client, self.symbol, (mid - BRICK_SIZE_10) if side == SELL else (mid + BRICK_SIZE_10))
+            print(self.sl_price)
             self.sl_order = update_sl(
                 self.client,
                 self.symbol,
@@ -173,15 +174,15 @@ class ReSys:
             r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=self.symbol)        
             exit_signal = self._get_signal(r_df)
             print('Monitoring Transaction: ...')
-            s = exit_signal == BUY
-            d = exit_signal == SELL
-            is_time_to_take_profit = s if self.signal == SELL else d
+            is_buy = exit_signal == BUY
+            is_sell = exit_signal == SELL
+            is_time_to_take_profit = is_buy if self.signal == SELL else is_sell
+            print(is_time_to_take_profit)
             if is_time_to_take_profit:
-                print('Selling: ...')
                 # TODO: Calculate distance between current close and entry_price to get PNL
                 # _get_current_pnl()
                 sl_price = r_df.iloc[-1]['close'] + BRICK_SIZE_10 if self.signal == SELL else r_df.iloc[-1]['close'] - BRICK_SIZE_10
-                close_position_with_tp(self.client, self.symbol, sl_price)
+                close_position_with_tp(self.client, self.symbol, sl_price, BUY if self.signal == SELL else SELL)
                 self._clean_up()
                 break
             else:      
@@ -191,17 +192,16 @@ class ReSys:
                     print('EXIT BY STOP LOSS')
                     self._clean_up()
                     break
-                self._update_sl(r_df, SELL if self.signal == SELL else BUY)
+                self._update_sl(r_df, BUY if self.signal == SELL else SELL)
                     
 
 
     def run(self):
         while self.is_live:
             self.is_live = self._is_bot_live()
-            
             r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=self.debug, symbol=self.symbol)        
             self.signal = self._get_signal(r_df)
-            self.signal = BUY
+            
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
             self._open_position(r_df)
             self._watch_position()
@@ -222,8 +222,8 @@ class ReSys:
         if self.market == FUTURES and not self.in_position:
             self.logger.info(f'{self.signal} signal found')
             print(self.signal)
-            if self.entry_order is None:
-                price = (renko_blocks.iloc[-2]['close'] + BRICK_SIZE_10) if self.signal == SELL else renko_blocks.iloc[-2]['close'] - BRICK_SIZE_10
+            if self.entry_order is None and self.signal is not None:
+                price = (renko_blocks.iloc[-2]['close'] + BRICK_SIZE_10) if self.signal == SELL else renko_blocks.iloc[-2]['close'] - BRICK_SIZE_10 - 50
                 self.sl_price = round_down_price(self.client, self.symbol, price)
                 self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
     
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     bot.debug = True
     bot.market = FUTURES
     bot.volume = 10
-    bot.leverage = 20
+    bot.leverage = 50
 
     while True:
         try:
