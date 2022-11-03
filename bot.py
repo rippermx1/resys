@@ -5,12 +5,11 @@ from pandas import DataFrame
 from binance import Client
 from renko import Renko
 import pandas_ta as ta
-
 from database import Database
 from models import Signal
 from logger import Logger
 from constants import BRICK_SIZE_10, BUY, DATABASE_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP
-from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, sell_future_with_sl, update_short_sl, get_order_status, buy_future_with_tp
+from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
 class ReSys:
@@ -24,11 +23,13 @@ class ReSys:
         self.signal = None
         self.signal_saved = False
         self.is_live = self._is_bot_live()
+        self.market = None
+        self.leverage = None
 
         self.entry_order = None
         self.sl_order = None
         self.sl_price = None
-        self.bid_price = None
+        self.entry_price = None
         
         self.in_position = False
 
@@ -141,19 +142,69 @@ class ReSys:
         return is_live
 
 
+    def _clean_up(self):
+        self.in_position = False
+        self.signal_saved = False
+        self.sl_order = None
+        self.sl_price = None
+        self.entry_order = None
+
+
+    def _update_sl(self, renko_blocks: DataFrame, side: str):
+        print('Updating Stop Loss Order: ...')
+        # TODO: calculate distance between entry_price and current close to get PNL
+        distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 2)
+        print(distance)
+        if distance > 0.15:
+            mid = renko_blocks.iloc[-1]['DCM_5_5']
+            self.sl_price = (mid - BRICK_SIZE_10) if side == BUY else (mid + BRICK_SIZE_10)
+            self.sl_order = update_sl(
+                self.client,
+                self.symbol,
+                self.sl_order,
+                self.sl_price,
+                side
+            )
+            print('Stop Loss Order Updated: {}'.format(self.sl_order))
+
+
+    def _watch_position(self):
+        while self.in_position:
+            r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=self.symbol)        
+            exit_signal = self._get_signal(r_df)
+            print('Monitoring Transaction: ...')
+            s = exit_signal == BUY
+            d = exit_signal == SELL
+            is_time_to_take_profit = s if self.signal == SELL else d
+            if is_time_to_take_profit:
+                print('Selling: ...')
+                # TODO: Calculate distance between current close and entry_price to get PNL
+                # _get_current_pnl()
+                sl_price = r_df.iloc[-1]['close'] + BRICK_SIZE_10 if self.signal == SELL else r_df.iloc[-1]['close'] - BRICK_SIZE_10
+                close_position_with_tp(self.client, self.symbol, sl_price)
+                self._clean_up()
+                break
+            else:      
+                status = get_order_status(self.client, self.sl_order, FUTURES)
+                print(status)
+                if status == 'FILLED' or status == 'CANCELED':
+                    print('EXIT BY STOP LOSS')
+                    self._clean_up()
+                    break
+                self._update_sl(r_df, SELL if self.signal == SELL else BUY)
+                    
+
+
     def run(self):
         while self.is_live:
             self.is_live = self._is_bot_live()
             
             r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=self.debug, symbol=self.symbol)        
             self.signal = self._get_signal(r_df)
+            self.signal = BUY
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
-            
-            self._open_position(r_df.iloc[-2]['close'] + BRICK_SIZE_10, volume=10)
-                      
-
-            if self.entry_order is not None and self.in_position:
-                self._watch_position()
+            self._open_position(r_df)
+            self._watch_position()
 
 
     def _open_spot_position(self, close_price, volume):
@@ -167,59 +218,19 @@ class ReSys:
         self.in_spot_position = True
 
 
-    def _open_position(self, sl_price, volume):
-        self.logger.info('SELL signal found')
-        print('SELL')
-        if self.signal == SELL and not self.in_position:
-        if self.short_entry_order is None:
-            self.short_sl_price = round_down_price(self.client, self.symbol, sl_price)
-            self.short_entry_order, self.short_sl_order, self.short_bid_price = sell_future_with_sl(self.client, self.symbol, volume, self.short_sl_price, leverage=10)
-        
-        self.logger.debug(f'entry_order: {self.short_entry_order}')
-        self.logger.debug(f'stop_order: {self.short_sl_order}')
-        self.in_short_position = True
-
-
-    def _watch_short_position(self):
-        while self.in_short_position:
-            r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=self.symbol)        
-            signal = self._get_signal(r_df)
-            print('Monitoring Transaction: ...')
-
-            if signal == BUY:
-                print('Selling: ...')
-                # TODO: Calculate distance between current close and entry_price to get PNL
-                buy_future_with_tp(self.client, self.symbol, r_df.iloc[-1]['close'] + BRICK_SIZE_10)
-                self.in_short_position = False
-                self.short_sl_order = None
-                self.short_entry_order = None
-                self.signal_saved = False
-                break
-            else:      
-                status = get_order_status(self.client, self.short_sl_order, FUTURES)
-                print(status)
-                if status == 'FILLED' or status == 'CANCELED':
-                    print('EXIT BY STOP LOSS')
-                    self.in_short_position = False
-                    self.short_sl_order = None
-                    self.short_entry_order = None
-                    self.signal_saved = False
-                    break
-
-                print('Updating Stop Loss Order: ...')
-                # TODO: calculate distance between entry_price and current close to get PNL
-                distance_ptc = round((abs(self.short_bid_price - r_df.iloc[-1]['close'])/self.short_bid_price)*100, 2)
-                print(distance_ptc)
-                if distance_ptc >= 0.15:
-                    new_stop_price = r_df.iloc[-1]['DCM_5_5'] - BRICK_SIZE_10
-                    self.short_sl_price = new_stop_price
-                    self.short_sl_order = update_short_sl(
-                        self.client,
-                        self.symbol,
-                        self.short_sl_order,
-                        self.short_sl_price
-                    )
+    def _open_position(self, renko_blocks: DataFrame):
+        if self.market == FUTURES and not self.in_position:
+            self.logger.info(f'{self.signal} signal found')
+            print(self.signal)
+            if self.entry_order is None:
+                price = (renko_blocks.iloc[-2]['close'] + BRICK_SIZE_10) if self.signal == SELL else renko_blocks.iloc[-2]['close'] - BRICK_SIZE_10
+                self.sl_price = round_down_price(self.client, self.symbol, price)
+                self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
     
+                self.logger.debug(f'entry_order: {self.entry_order}')
+                self.logger.debug(f'stop_order: {self.sl_order}')
+                self.in_position = True
+
 
     def _watch_spot_position(self):
         while in_buy_position:
@@ -251,6 +262,9 @@ if __name__ == "__main__":
     client = Client(os.getenv("BINANCE_API_KEY"), os.getenv("BINANCE_API_SECRET"))
     bot = ReSys(client, 'BTCUSDT', 100)
     bot.debug = True
+    bot.market = FUTURES
+    bot.volume = 10
+    bot.leverage = 20
 
     while True:
         try:

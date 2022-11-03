@@ -4,6 +4,7 @@ from constants import FUTURES, SPOT
 from binance import Client
 import math
 import logging
+from constants import *
 
 logging.basicConfig(filename="./std.log", 
 					format='%(asctime)s %(message)s', 
@@ -152,18 +153,19 @@ def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: 
         return stop_order
 
 
-def update_short_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float):
+def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float, side: str):
     stop_order = None
     try:
         client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
         stop_order = client.futures_create_order(
             symbol=symbol,
-            side=Client.SIDE_BUY,
+            side=side,
             type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
             stopPrice=new_stop_price,                    
             closePosition=True
         )
         logger.info(f"update {symbol} sl {new_stop_price}")
+        print(stop_order)
         return stop_order
     except Exception as e:
         logger.error(e)
@@ -227,43 +229,43 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
     return entry_order, qty_to_buy, stop_order, qty_to_sell
 
 
-def sell_future_with_sl(client: Client, symbol: str, volume: int, stop_price: float, leverage: int):
+def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: float, leverage: int, side: str):
     client.futures_change_leverage(symbol=symbol, leverage=leverage)
     volume = volume * leverage
     
     order_book = get_order_book(client, symbol, FUTURES)
     for i in range(len(order_book)):
-        bid_price = float(order_book.iloc[i].bids[0])
-        bid_liquidity = float(order_book.iloc[i].bids[1])
-        qty_to_sell = round(round_down(client, symbol, (volume / bid_price)), 3)
+        level_price = float(order_book.iloc[i].bids[0]) if side == SELL else float(order_book.iloc[i].asks[0])
+        level_liquidity = float(order_book.iloc[i].bids[1]) if side == SELL else float(order_book.iloc[i].asks[1])
+        qty = round(round_down(client, symbol, (volume / level_price)), 3)
         
-        logger.info(f'Trying to get best price: {bid_price}')
-        if qty_to_sell < bid_liquidity:
-            print(qty_to_sell)
-            logger.info(f'Selling {symbol} at FUTURE with Volume={volume}USDT at Price {bid_price}')
+        logger.info(f'Trying to get best price: {level_price}')
+        if qty < level_liquidity:
+            print(qty)
+            logger.info(f'Selling {symbol} at FUTURE with Volume={volume}USDT at Price {level_price}')
             entry_order = client.futures_create_order(
                 symbol=symbol, 
-                side=Client.SIDE_SELL, 
+                side=Client.SIDE_SELL if side == SELL else Client.SIDE_BUY, 
                 type=Client.FUTURE_ORDER_TYPE_MARKET, 
-                quantity=qty_to_sell,
+                quantity=qty,
             )
             # print("entry_order {}".format(entry_order))      
             if entry_order is not None:
                 sl_price = round_down_price(client, symbol, stop_price)
-                logger.info(f'Stop Buy {symbol} at FUTURE with Volume={qty_to_sell}BTC at Price {sl_price}')
+                logger.info(f'Stop Buy {symbol} at FUTURE with Volume={qty}BTC at Price {sl_price}')
                 stop_order = client.futures_create_order(
                     symbol=symbol,
-                    side=Client.SIDE_BUY,
+                    side=Client.SIDE_BUY if side == SELL else Client.SIDE_SELL,
                     type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
                     stopPrice=stop_price,                    
                     closePosition=True
                 )
                 # print("stop_order {}".format(stop_order))                                    
             break    
-    return entry_order, stop_order, bid_price
+    return entry_order, stop_order, level_price
 
 
-def buy_future_with_tp(client: Client, symbol: str, take_profit_price: float):
+def close_position_with_tp(client: Client, symbol: str, take_profit_price: float):
     return client.futures_create_order(
         symbol=symbol,
         side=Client.SIDE_BUY,
