@@ -1,0 +1,156 @@
+2022-10-25 22:01:05,081 Starting new HTTPS connection (1): api.binance.com:443
+2022-10-25 22:01:06,357 https://api.binance.com:443 "GET /api/v3/ping HTTP/1.1" 200 2
+2022-10-25 22:01:06,358 Making Renko Bricks
+2022-10-25 22:01:06,710 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56544
+2022-10-25 22:01:06,783     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:06,795 Waiting for signal
+2022-10-25 22:01:06,797 Making Renko Bricks
+2022-10-25 22:01:07,146 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:07,193     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:07,211 Waiting for signal
+2022-10-25 22:01:07,214 Making Renko Bricks
+2022-10-25 22:01:07,565 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:07,622     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:07,634 Waiting for signal
+2022-10-25 22:01:07,638 Making Renko Bricks
+2022-10-25 22:01:08,013 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:08,328     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+700   up  20183.65  20193.65  NaN   NaN  20173.65     100.000000     100.000000
+2022-10-25 22:01:08,339 Waiting for signal
+2022-10-25 22:01:08,341 Making Renko Bricks
+2022-10-25 22:01:08,690 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56542
+2022-10-25 22:01:09,004     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:09,021 Waiting for signal
+2022-10-25 22:01:09,024 Making Renko Bricks
+2022-10-25 22:01:09,369 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56540
+2022-10-25 22:01:09,688     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:09,705 Waiting for signal
+2022-10-25 22:01:09,709 Making Renko Bricks
+2022-10-25 22:01:10,056 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56542
+2022-10-25 22:01:10,360     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:10,372 Waiting for signal
+2022-10-25 22:01:10,374 Making Renko Bricks
+2022-10-25 22:01:10,723 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:11,041     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:11,059 Waiting for signal
+2022-10-25 22:01:11,063 Making Renko Bricks
+2022-10-25 22:01:11,412 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:11,735     type      open     close  low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+695   up  20133.65  20143.65  NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65  NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65  NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65  NaN   NaN  20153.65     100.000000     100.000000
+699   up  20173.65  20183.65  NaN   NaN  20163.65     100.000000     100.000000
+2022-10-25 22:01:11,750 Waiting for signal
+2022-10-25 22:01:11,756 Making Renko Bricks
+2022-10-25 22:01:12,945 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56543
+2022-10-25 22:01:13,548     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65       NaN   NaN  20153.65     100.000000     100.000000
+2022-10-25 22:01:13,565 Waiting for signal
+2022-10-25 22:01:13,567 Making Renko Bricks
+2022-10-25 22:01:13,924 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:14,235     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65       NaN   NaN  20153.65     100.000000     100.000000
+2022-10-25 22:01:14,250 Waiting for signal
+2022-10-25 22:01:14,254 Making Renko Bricks
+2022-10-25 22:01:14,609 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56545
+2022-10-25 22:01:14,810     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65       NaN   NaN  20153.65     100.000000     100.000000
+2022-10-25 22:01:14,841 Waiting for signal
+2022-10-25 22:01:14,845 Making Renko Bricks
+2022-10-25 22:01:15,210 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56540
+2022-10-25 22:01:15,296     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+693   up  20113.65  20123.65  20099.99   NaN  20118.65      75.000000      77.083333
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+2022-10-25 22:01:15,341 Waiting for signal
+2022-10-25 22:01:15,348 Making Renko Bricks
+2022-10-25 22:01:16,540 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:17,136     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+693   up  20113.65  20123.65  20099.99   NaN  20118.65      75.000000      77.083333
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+2022-10-25 22:01:17,148 Waiting for signal
+2022-10-25 22:01:17,150 Making Renko Bricks
+2022-10-25 22:01:17,499 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:17,549     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+693   up  20113.65  20123.65  20099.99   NaN  20118.65      75.000000      77.083333
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+2022-10-25 22:01:17,563 Waiting for signal
+2022-10-25 22:01:17,565 Making Renko Bricks
+2022-10-25 22:01:17,913 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56541
+2022-10-25 22:01:17,953     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65       NaN   NaN  20153.65     100.000000     100.000000
+2022-10-25 22:01:17,970 Waiting for signal
+2022-10-25 22:01:17,974 Making Renko Bricks
+2022-10-25 22:01:19,178 https://api.binance.com:443 "GET /api/v3/klines?interval=5m&limit=1000&symbol=BTCUSDT HTTP/1.1" 200 56540
+2022-10-25 22:01:19,780     type      open     close       low  high   DCM_5_5  STOCHk_14_2_4  STOCHd_14_2_4
+694   up  20123.65  20133.65  20113.46   NaN  20118.65      75.000000      75.000000
+695   up  20133.65  20143.65       NaN   NaN  20123.65      83.333333      79.166667
+696   up  20143.65  20153.65       NaN   NaN  20128.65      95.833333      89.583333
+697   up  20153.65  20163.65       NaN   NaN  20143.65     100.000000      97.916667
+698   up  20163.65  20173.65       NaN   NaN  20153.65     100.000000     100.000000
+2022-10-25 22:01:19,798 Waiting for signal
+2022-10-25 22:01:19,803 Making Renko Bricks

@@ -6,3 +6,4 @@ numpy
 renko
 matplotlib
 pytest
+pymongo

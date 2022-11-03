@@ -1,0 +1,10 @@
+SPOT = 'spot'
+FUTURES = 'futures'
+STOCHASTIC_OVERBOUGHT = 95
+STOCHASTIC_OVERSOLD   = 5
+UP   = 'up'
+DOWN = 'down'
+BRICK_SIZE_10 = 10
+SELL = 'SELL'
+BUY  = 'BUY'
+DATABASE_RESYS = 'resys'

@@ -47,3 +47,11 @@
         * Place a SELL order (Future) Below the Mid Line Donchian Channel
         * Place a STOP LOSS order Above the last Green Brick
         * Place a TAKE PROFIT order when Buy Conditions are meet
+
+
+
+# Notes:
+* [ReSys Bot] Return Performance over time compared to the S&P 500 and Bitcoin
+
+* [ReSys Bot] Buy Spot in Extreme Oversold Stochastic Area
+* [ReSys Bot] Hedge Sell in Extreme Overbought Stochastic Area
