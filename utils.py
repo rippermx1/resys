@@ -230,6 +230,44 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
     return entry_order, qty_to_buy, stop_order, qty_to_sell
 
 
+def _open_spot_position(self, close_price, volume):
+        print('BUY')
+        if self.spot_entry_order is None:
+            self.spot_sl_price = round_down_price(self.client, self.symbol, close_price)
+            self.spot_entry_order, _, self.spot_sl_order, _ = buy_spot_with_sl(self.client, self.symbol, volume, self.spot_sl_price)
+
+        self.logger.debug(f'entry_order: {self.spot_entry_order}')
+        self.logger.debug(f'stop_order: {self.spot_sl_order}')
+        self.in_spot_position = True
+
+
+def _watch_spot_position(self):
+        while in_buy_position:
+            r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=self.symbol)        
+            signal = self._get_signal(r_df)
+            print('Monitoring Transaction: ...')
+
+            if signal == SELL:
+                print('Selling: ...')
+                # TODO: Calculate distance between current close and entry_price to get PNL
+                sell_spot_at_market(self.client, self.symbol, self.volume, stop_order)
+                in_buy_position = False
+                break
+            else:                        
+                if stop_order is not None and self.client.get_order(symbol=self.symbol, orderId=stop_order['orderId'])['status'] == 'FILLED':
+                    in_buy_position = False
+                    break
+                
+                print('Updating Stop Loss Order: ...')
+                # TODO: calculate distance between entry_price and current close to get PNL
+                distance_ptc = round((abs(r_df.iloc[-1]['DCM_5_5'] - r_df.iloc[-2]['close'])/r_df.iloc[-1]['DCM_5_5'])*100, 2)
+                print(distance_ptc)
+                if distance_ptc >= 0.1:
+                    new_stop_price = r_df.iloc[-1]['DCM_5_5'] - BRICK_SIZE_10
+                    stop_order = update_spot_sl(self.client, self.symbol, stop_order, new_stop_price, self.volume)
+
+
+
 def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: float, leverage: int, side: str):
     client.futures_change_leverage(symbol=symbol, leverage=leverage)
     volume = volume * leverage
@@ -241,27 +279,27 @@ def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: 
         qty = round(round_down(client, symbol, (volume / level_price)), 3)
         
         logger.info(f'Trying to get best price: {level_price}')
+        print(f'Trying to get best price: {level_price}')
         if qty < level_liquidity:
-            print(qty)
-            logger.info(f'Selling {symbol} at FUTURE with Volume={volume}USDT at Price {level_price}')
             entry_order = client.futures_create_order(
                 symbol=symbol, 
                 side=Client.SIDE_SELL if side == SELL else Client.SIDE_BUY, 
                 type=Client.FUTURE_ORDER_TYPE_MARKET, 
                 quantity=qty,
             )
-            # print("entry_order {}".format(entry_order))      
+            logger.info(f'Sell Market {entry_order}')
+            print(f'Sell Market {entry_order}')   
             if entry_order is not None:
                 sl_price = round_down_price(client, symbol, stop_price)
-                logger.info(f'Stop Buy {symbol} at FUTURE with Volume={qty}BTC at Price {sl_price}')
                 stop_order = client.futures_create_order(
                     symbol=symbol,
                     side=Client.SIDE_BUY if side == SELL else Client.SIDE_SELL,
                     type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-                    stopPrice=stop_price,                    
+                    stopPrice=sl_price,                    
                     closePosition=True
                 )
-                # print("stop_order {}".format(stop_order))                                    
+                logger.info(f'Buy Stop {stop_order}')
+                print(f'Buy Stop {stop_order}')                                  
             break    
     return entry_order, stop_order, level_price
 

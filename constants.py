@@ -7,4 +7,4 @@ DOWN = 'down'
 BRICK_SIZE_10 = 10
 SELL = 'SELL'
 BUY  = 'BUY'
-DATABASE_RESYS = 'resys'
+DB_RESYS = 'resys'
