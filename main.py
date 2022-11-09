@@ -9,7 +9,7 @@ logger = Logger().log
 public_key = os.environ.get('BINANCE_API_KEY')
 secret_key = os.environ.get('BINANCE_API_SECRET')
 symbol = 'BTCUSDT'
-volume = 10
+volume = 20
 leverage = 50
 
 if __name__ == "__main__":

@@ -158,7 +158,7 @@ class ReSys:
         distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 3)
         self.logger.info(f'Distance: {distance}%')
         print(f'Distance: {distance}%')
-        if distance > 0.001:
+        if distance > 0.25:
             mid = renko_blocks.iloc[-1]['DCM_5_5']
             self.sl_price = round_down_price(self.client, self.symbol, (mid - BRICK_SIZE_10) if side == SELL else (mid + BRICK_SIZE_10))
             self.sl_order = update_sl(
@@ -218,7 +218,7 @@ class ReSys:
             self.is_live = self._is_bot_live()
             r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=False, symbol=self.symbol)
             self.signal = self._get_signal(r_df)
-            self.signal = BUY
+            # self.signal = BUY
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
             self._open_position(Position(self.signal, r_df.iloc[-2]['close'], datetime.now(), False))
             
