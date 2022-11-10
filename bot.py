@@ -8,7 +8,7 @@ from exchange import Exchange
 from database import Database
 from models import Signal, Position
 from logger import Logger
-from constants import BRICK_SIZE_10, BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP
+from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP
 from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
@@ -70,12 +70,12 @@ class ReSys:
 
     def _is_turning_down(self, df: DataFrame) -> bool:
         ''' Determine if is turning down '''
-        return df.iloc[-1]['type'] == DOWN and df.iloc[-2]['type'] == UP and df.iloc[-3]['type'] == UP and df.iloc[-4]['type'] == UP
+        return df.iloc[-1]['type'] == DOWN and df.iloc[-2]['type'] == DOWN and df.iloc[-3]['type'] == UP and df.iloc[-4]['type'] == UP and df.iloc[-5]['type'] == UP
 
 
     def _is_turning_up(self, df: DataFrame) -> bool:
         ''' Determine if is turning up '''
-        return df.iloc[-1]['type'] == UP and df.iloc[-2]['type'] == DOWN and df.iloc[-3]['type'] == DOWN and df.iloc[-4]['type'] == DOWN
+        return df.iloc[-1]['type'] == UP and df.iloc[-2]['type'] == UP and df.iloc[-3]['type'] == DOWN and df.iloc[-4]['type'] == DOWN and df.iloc[-5]['type'] == DOWN
 
 
     def _close_above_dc(self, df: DataFrame) -> bool:
@@ -162,7 +162,7 @@ class ReSys:
         print(f'Distance: {distance}%')
         if distance > 0.25:
             mid = renko_blocks.iloc[-1]['DCM_5_5']
-            self.sl_price = round_down_price(self.client, self.symbol, (mid - BRICK_SIZE_10) if side == SELL else (mid + BRICK_SIZE_10))
+            self.sl_price = round_down_price(self.client, self.symbol, (mid - self.brick_size) if side == SELL else (mid + self.brick_size))
             self.sl_order = update_sl(
                 self.client,
                 self.symbol,
@@ -187,7 +187,7 @@ class ReSys:
             if is_time_to_take_profit:
                 # TODO: Calculate distance between current close and entry_price to get PNL
                 # _get_current_pnl()
-                sl_price = r_df.iloc[-1]['close'] + BRICK_SIZE_10 if self.signal == SELL else r_df.iloc[-1]['close'] - BRICK_SIZE_10
+                sl_price = r_df.iloc[-1]['close'] + self.brick_size if self.signal == SELL else r_df.iloc[-1]['close'] - self.brick_size
                 sl_price = round_down_price(self.client, self.symbol, sl_price)
                 close_position_with_tp(self.client, self.symbol, sl_price, BUY if self.signal == SELL else SELL)
                 self._clean_up()
@@ -207,7 +207,8 @@ class ReSys:
     def _open_position(self, position: Position):
         if self.market == FUTURES and not self.in_position:
             if self.entry_order is None and self.signal is not None:
-                _sl_price = (position.sl_price + BRICK_SIZE_10) if self.signal == SELL else (position.sl_price - BRICK_SIZE_10)
+                # TODO: Calculate Stop Loss Price based on distance between entry_price and prev 2 closes plus brick_size with factor
+                _sl_price = (position.sl_price + self.brick_size * 2) if self.signal == SELL else (position.sl_price - self.brick_size * 2)
                 self.sl_price = round_down_price(self.client, self.symbol, _sl_price)
                 self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
                 self.in_position = True

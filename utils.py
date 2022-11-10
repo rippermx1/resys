@@ -287,8 +287,8 @@ def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: 
                 type=Client.FUTURE_ORDER_TYPE_MARKET, 
                 quantity=qty,
             )
-            logger.info(f'Sell Market {entry_order}')
-            print(f'Sell Market {entry_order}')   
+            logger.info(f'{side} Market {entry_order}')
+            print(f'{side} Market {entry_order}')   
             if entry_order is not None:
                 sl_price = round_down_price(client, symbol, stop_price)
                 stop_order = client.futures_create_order(
@@ -298,8 +298,8 @@ def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: 
                     stopPrice=sl_price,                    
                     closePosition=True
                 )
-                logger.info(f'Buy Stop {stop_order}')
-                print(f'Buy Stop {stop_order}')                                  
+                logger.info(f'{SELL if side == BUY else BUY} Stop {stop_order}')
+                print(f'{SELL if side == BUY else BUY} Stop {stop_order}')                                  
             break    
     return entry_order, stop_order, level_price
 
