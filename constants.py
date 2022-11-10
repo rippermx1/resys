@@ -5,6 +5,7 @@ STOCHASTIC_OVERSOLD   = 5
 UP   = 'up'
 DOWN = 'down'
 BRICK_SIZE_10 = 10
+BRICK_SIZE_20 = 20
 SELL = 'SELL'
 BUY  = 'BUY'
 DB_RESYS = 'resys'

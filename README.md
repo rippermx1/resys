@@ -55,3 +55,9 @@
 
 * [ReSys Bot] Buy Spot in Extreme Oversold Stochastic Area
 * [ReSys Bot] Hedge Sell in Extreme Overbought Stochastic Area
+
+
+# Notes:
+
+* To start ReSys use command: 
+    - python main.py -symbol BTCUSDT -volume 10 -leverage 50 -brick_size 10
