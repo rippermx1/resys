@@ -8,7 +8,7 @@ from exchange import Exchange
 from database import Database
 from models import Signal, Position
 from logger import Logger
-from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP
+from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT
 from utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
@@ -38,11 +38,16 @@ class ReSys:
 
     def _get_data(self, hist: bool = False, start_str: str = None) -> DataFrame:
         data = None
-        if hist:
+        if hist and self.market == SPOT:
             data = self.client.get_historical_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
         else:
             data = self.client.get_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
         
+        if hist and self.market == FUTURES:
+            data = self.client.futures_historical_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
+        else:
+            data = self.client.futures_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
+
         data = DataFrame(data)
         data = data.iloc[:,[0,1,2,3,4,5]]
         data.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -156,17 +161,15 @@ class ReSys:
         # TODO: calculate distance between entry_price and current close to get PNL
         distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 3)
         self.log.info(f'Distance: {distance}%')
-        if distance > 0.25:
+        right_direction = (renko_blocks.iloc[-1]['close'] < self.entry_price) if side == BUY else (renko_blocks.iloc[-1]['close'] > self.entry_price)
+        self.log.info(f'Direction: {right_direction}')
+        if distance > 0.25 and right_direction:
             mid = renko_blocks.iloc[-1]['DCM_5_5']
             self.sl_price = round_down_price(self.client, self.symbol, (mid - self.brick_size) if side == SELL else (mid + self.brick_size))
-            self.sl_order = update_sl(
-                self.client,
-                self.symbol,
-                self.sl_order,
-                self.sl_price,
-                side
-            )
-            self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))            
+            self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, side)
+            self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
+            if self.sl_order is None:
+                self._clean_up()          
 
 
     def _watch_position(self):
@@ -193,7 +196,7 @@ class ReSys:
                 if sl_status == Client.ORDER_STATUS_FILLED or sl_status == Client.ORDER_STATUS_CANCELED:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
-                    break
+                    break                
                 self._update_sl(r_df, BUY if self.signal == SELL else SELL)
 
 
@@ -201,7 +204,7 @@ class ReSys:
         if self.market == FUTURES and not self.in_position:
             if self.entry_order is None and self.signal is not None:
                 # TODO: Calculate Stop Loss Price based on distance between entry_price and prev 2 closes plus brick_size with factor
-                _sl_price = (position.sl_price + self.brick_size * 2) if self.signal == SELL else (position.sl_price - self.brick_size * 2)
+                _sl_price = (position.sl_price + self.brick_size * 3) if self.signal == SELL else (position.sl_price - self.brick_size * 3)
                 self.sl_price = round_down_price(self.client, self.symbol, _sl_price)
                 self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
                 self.in_position = True

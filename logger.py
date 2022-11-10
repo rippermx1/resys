@@ -6,6 +6,7 @@ class Logger():
     WAITING_SIGNAL = 'Looking for a Signal... please wait'
     SIGNAL_FOUND = 'Signal Found'
     STOP_LOSS_TRIGGERED = 'Stop Loss Triggered'
+    MANUAL_EXIT_TRIGGERED = 'Manual Exit Triggered'
     GETTIN_BEST_PRICE = 'Trying to get best price'
     
     def __init__(self):
