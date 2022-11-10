@@ -14,32 +14,34 @@ load_dotenv()
 
 class ReSys:
 
-    def __init__(self, exchange: Exchange, symbol, volume):
+    def __init__(self, exchange: Exchange, symbol, volume, market, leverage, brick_size, debug):
         self.logger = Logger().log
         self.exchange = exchange
-        self.client = self.exchange.get_client()
         self.symbol = symbol
         self.volume = volume
-        self.debug = False
-        self.signal = None
-        self.signal_saved = False
-        self.is_live = self._is_bot_live()
-        self.market = None
-        self.leverage = None
+        self.debug = debug
+        self.market = market
+        self.leverage = leverage
+        self.brick_size = brick_size
 
+        self.signal = None
         self.entry_order = None
         self.sl_order = None
         self.sl_price = None
         self.entry_price = None
-        
-        self.in_position = False
 
-    def _get_data(self, hist: bool = False, start_str: str = None, symbol: str = None) -> DataFrame:
+        self.in_position = False
+        self.signal_saved = False
+
+        self.client = self.exchange.get_client()
+        self.is_live = self._is_bot_live()
+
+    def _get_data(self, hist: bool = False, start_str: str = None) -> DataFrame:
         data = None
         if hist:
-            data = self.client.get_historical_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
+            data = self.client.get_historical_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
         else:
-            data = self.client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
+            data = self.client.get_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
         
         data = DataFrame(data)
         data = data.iloc[:,[0,1,2,3,4,5]]
@@ -86,10 +88,10 @@ class ReSys:
         return df.iloc[-1]['close'] < df.iloc[-1]['DCM_5_5']
 
 
-    def _get_renko_bricks_df(self, brick_size: int, debug: bool = False, symbol: str= None) -> DataFrame:
+    def _get_renko_bricks_df(self) -> DataFrame:
         self.logger.info('Building Renko Bricks')
-        df = self._get_data(hist= False, start_str= None, symbol=symbol)
-        renko = Renko(brick_size, df['close'])
+        df = self._get_data(hist= False, start_str= None)
+        renko = Renko(self.brick_size, df['close'])
         renko.create_renko()
         r_df = DataFrame(renko.bricks)
 
@@ -98,7 +100,7 @@ class ReSys:
 
         stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=4))
         r_df = r_df.join(stoch)
-        if debug:
+        if self.debug:
             print(r_df.tail(5), end='\n', flush=True)
             self.logger.debug(r_df.tail(5))
         return r_df
@@ -175,7 +177,7 @@ class ReSys:
     def _watch_position(self):
         while self.in_position:
             print(f'Monitoring Position: {self.signal}')
-            r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=True, symbol=self.symbol)        
+            r_df = self._get_renko_bricks_df()        
             exit_signal = self._get_signal(r_df)
             
             is_buy = exit_signal == BUY
@@ -216,7 +218,7 @@ class ReSys:
             self.logger.info('ReSys is looking for a signal... wait')
             print('ReSys is looking for a signal... wait')
             self.is_live = self._is_bot_live()
-            r_df = self._get_renko_bricks_df(brick_size=BRICK_SIZE_10, debug=False, symbol=self.symbol)
+            r_df = self._get_renko_bricks_df()
             self.signal = self._get_signal(r_df)
             # self.signal = BUY
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
