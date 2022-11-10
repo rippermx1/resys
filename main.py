@@ -9,9 +9,6 @@ import argparse
 logger = Logger().log
 public_key = os.environ.get('BINANCE_API_KEY')
 secret_key = os.environ.get('BINANCE_API_SECRET')
-symbol = 'BTCUSDT'
-volume = 20
-leverage = 50
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-symbol', '--symbol', type=str, help='Symbol to trade', required=True)
@@ -31,8 +28,7 @@ if __name__ == "__main__":
     print(f"Starting ReSys for: {bot.symbol}\nVolume: {bot.volume}\nLeverage: {bot.leverage}\nBrick Size: {bot.brick_size}")
     while True:
         try:
-            bot.run()
-            pass
+            bot.run()            
         except Exception as e:
             logger.error(e)
             print(e)
