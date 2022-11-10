@@ -3,14 +3,10 @@ import numpy as np
 from constants import FUTURES, SPOT
 from binance import Client
 import math
-import logging
+from logger import Logger
 from constants import *
 
-logging.basicConfig(filename="./std.log", 
-					format='%(asctime)s %(message)s', 
-					filemode='w')
-logger=logging.getLogger()
-logger.setLevel(logging.DEBUG)
+log = Logger()
 
 # to make sure the new level area does not exist already
 def is_far_from_level( value, levels, df: DataFrame):    
@@ -128,9 +124,9 @@ def sell_spot_at_market(client: Client, symbol: str, quantity: float, stop_order
     try:
         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
         client.create_order(symbol=symbol, side="SELL", type="MARKET", quantity=quantity)
-        logger.info(f"sell {symbol} {quantity}")
+        log.info(f"sell {symbol} {quantity}")
     except Exception as e:
-        logger.error(e)
+        log.error(e)
 
 
 def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float, quantity: float):
@@ -146,10 +142,10 @@ def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: 
             stopPrice=new_stop_price, 
             timeInForce=Client.TIME_IN_FORCE_GTC
         )
-        logger.info(f"update {symbol} sl {new_stop_price}")
+        log.info(f"update {symbol} sl {new_stop_price}")
         return stop_order
     except Exception as e:
-        logger.error(e)
+        log.error(e)
         return stop_order
 
 
@@ -165,11 +161,11 @@ def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float
             stopPrice=new_stop_price,                    
             closePosition=True
         )
-        logger.info(f"update {symbol} sl {new_stop_price}")
+        log.info(f"update {symbol} sl {new_stop_price}")
         print(stop_order)
         return stop_order
     except Exception as e:
-        logger.error(e)
+        log.error(e)
         return stop_order
 
 
@@ -185,24 +181,24 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
     stop_order = None
     qty_to_buy = 0
     qty_to_sell = 0
-    logger.info("Checking balance")
+    log.info("Checking balance")
     balance = get_balance(client)
     print(balance)
     if balance < volume:
-        logger.info("Not enough balance to buy")
+        log.info("Not enough balance to buy")
         print("Not enough balance to buy")
         return entry_order, qty_to_buy, stop_order, qty_to_sell
 
     
-    logger.info("Checking Order Book")
+    log.info("Checking Order Book")
     order_book = get_order_book(client, symbol, SPOT)
     for i in range(len(order_book)):
         ask_price = float(order_book.iloc[i].asks[0])
         ask_liquidity = float(order_book.iloc[i].asks[1])
         qty_to_buy = round_down(client, symbol, (volume / ask_price))
-        logger.info(f'Trying to get best price: {ask_price}')   
+        log.info(f'Trying to get best price: {ask_price}')   
         if qty_to_buy < ask_liquidity:
-            logger.info(f'Buying {symbol} at SPOT with Volume={volume}USDT at Price {ask_price}')
+            log.info(f'Buying {symbol} at SPOT with Volume={volume}USDT at Price {ask_price}')
             entry_order = client.create_order(
                 symbol=symbol, 
                 side=Client.SIDE_BUY, 
@@ -215,7 +211,7 @@ def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float
             if entry_order is not None:
                 qty_to_sell = round_down(client, symbol, float(entry_order["fills"][0]["qty"])-float(entry_order["fills"][0]["commission"]))                    
                 sl_price = round_down_price(client, symbol, stop_price)
-                logger.info(f'Stop Sell {symbol} at SPOT with Volume={qty_to_sell}BTC at Price {sl_price}')
+                log.info(f'Stop Sell {symbol} at SPOT with Volume={qty_to_sell}BTC at Price {sl_price}')
                 stop_order = client.create_order(
                     symbol=symbol, 
                     side=Client.SIDE_SELL, 
@@ -236,8 +232,8 @@ def _open_spot_position(self, close_price, volume):
             self.spot_sl_price = round_down_price(self.client, self.symbol, close_price)
             self.spot_entry_order, _, self.spot_sl_order, _ = buy_spot_with_sl(self.client, self.symbol, volume, self.spot_sl_price)
 
-        self.logger.debug(f'entry_order: {self.spot_entry_order}')
-        self.logger.debug(f'stop_order: {self.spot_sl_order}')
+        self.log.debug(f'entry_order: {self.spot_entry_order}')
+        self.log.debug(f'stop_order: {self.spot_sl_order}')
         self.in_spot_position = True
 
 
@@ -270,16 +266,14 @@ def _watch_spot_position(self):
 
 def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: float, leverage: int, side: str):
     client.futures_change_leverage(symbol=symbol, leverage=leverage)
-    volume = volume * leverage
-    
+    volume = volume * leverage    
     order_book = get_order_book(client, symbol, FUTURES)
     for i in range(len(order_book)):
         level_price = float(order_book.iloc[i].bids[0]) if side == SELL else float(order_book.iloc[i].asks[0])
         level_liquidity = float(order_book.iloc[i].bids[1]) if side == SELL else float(order_book.iloc[i].asks[1])
         qty = round(round_down(client, symbol, (volume / level_price)), 3)
         
-        logger.info(f'Trying to get best price: {level_price}')
-        print(f'Trying to get best price: {level_price}')
+        log.info(f'{Logger.GETTIN_BEST_PRICE}: {level_price}')
         if qty < level_liquidity:
             entry_order = client.futures_create_order(
                 symbol=symbol, 
@@ -287,8 +281,7 @@ def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: 
                 type=Client.FUTURE_ORDER_TYPE_MARKET, 
                 quantity=qty,
             )
-            logger.info(f'{side} Market {entry_order}')
-            print(f'{side} Market {entry_order}')   
+            log.info(f'{side} Market: {entry_order}')            
             if entry_order is not None:
                 sl_price = round_down_price(client, symbol, stop_price)
                 stop_order = client.futures_create_order(
@@ -298,8 +291,7 @@ def open_position_with_sl(client: Client, symbol: str, volume: int, stop_price: 
                     stopPrice=sl_price,                    
                     closePosition=True
                 )
-                logger.info(f'{SELL if side == BUY else BUY} Stop {stop_order}')
-                print(f'{SELL if side == BUY else BUY} Stop {stop_order}')                                  
+                log.info(f'{SELL if side == BUY else BUY} Stop {stop_order}')                                              
             break    
     return entry_order, stop_order, level_price
 

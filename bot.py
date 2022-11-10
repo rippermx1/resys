@@ -9,13 +9,13 @@ from database import Database
 from models import Signal, Position
 from logger import Logger
 from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP
-from utils import buy_spot_with_sl, round_down_price, sell_spot_at_market, update_spot_sl, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
+from utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
 class ReSys:
 
     def __init__(self, exchange: Exchange, symbol, volume, market, leverage, brick_size, debug):
-        self.logger = Logger().log
+        self.log = Logger()
         self.exchange = exchange
         self.symbol = symbol
         self.volume = volume
@@ -89,8 +89,8 @@ class ReSys:
 
 
     def _get_renko_bricks_df(self) -> DataFrame:
-        self.logger.info('Building Renko Bricks')
-        df = self._get_data(hist= False, start_str= None)
+        self.log.info(Logger.BUILDING_BRICKS)
+        df = self._get_data()
         renko = Renko(self.brick_size, df['close'])
         renko.create_renko()
         r_df = DataFrame(renko.bricks)
@@ -101,8 +101,7 @@ class ReSys:
         stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=4))
         r_df = r_df.join(stoch)
         if self.debug:
-            print(r_df.tail(5), end='\n', flush=True)
-            self.logger.debug(r_df.tail(5))
+            self.log.debug(r_df.tail(5))            
         return r_df
 
 
@@ -114,8 +113,7 @@ class ReSys:
         elif self._is_turning_up(r_df) & self._is_oversold(r_df) & self._close_above_dc(r_df):
             signal = BUY
         if signal is not None:
-            self.logger.info('Signal Found: {}'.format(signal))
-            print('Signal Found: {}'.format(signal))
+            self.log.info(f'{Logger.SIGNAL_FOUND}: {signal}')            
         return signal
 
 
@@ -129,23 +127,23 @@ class ReSys:
                 'close': signal.close,
                 'test': signal.test
             })
-            self.logger.info('Signal Saved')
-            print('Signal Saved')
             self.signal_saved = True
+            self.log.info('Signal Saved')
 
 
     def _is_bot_live(self, debug: bool = False) -> bool:
         ''' Determine if bot is live '''
         database = Database(DB_RESYS)
-        resys_config = database.find_one('config', None)
-        is_live = resys_config['is_live']
-        self.logger.info(f'Is Live: {is_live}')
+        config = database.find_one('config', None)
+        is_live = config['is_live']
         if debug:
-            print("is_live: {}".format(resys_config))
+            self.log.info(f'Is Live: {is_live}')
+            print("is_live: {}".format(config))
         return is_live
 
 
     def _clean_up(self):
+        ''' Restore Default Values for the Bot in order to keep running '''
         self.in_position = False
         self.signal_saved = False
         self.sl_order = None
@@ -154,12 +152,10 @@ class ReSys:
 
 
     def _update_sl(self, renko_blocks: DataFrame, side: str):
-        self.logger.info('Updating Stop Loss Order')
-        print('Updating Stop Loss Order')
+        self.log.info('Updating Stop Loss Order')        
         # TODO: calculate distance between entry_price and current close to get PNL
         distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 3)
-        self.logger.info(f'Distance: {distance}%')
-        print(f'Distance: {distance}%')
+        self.log.info(f'Distance: {distance}%')
         if distance > 0.25:
             mid = renko_blocks.iloc[-1]['DCM_5_5']
             self.sl_price = round_down_price(self.client, self.symbol, (mid - self.brick_size) if side == SELL else (mid + self.brick_size))
@@ -170,8 +166,7 @@ class ReSys:
                 self.sl_price,
                 side
             )
-            self.logger.info('Stop Loss Order Updated: {}'.format(self.sl_order))
-            print('Stop Loss Order Updated: {}'.format(self.sl_order))
+            self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))            
 
 
     def _watch_position(self):
@@ -194,11 +189,9 @@ class ReSys:
                 break
             else:      
                 sl_status = get_order_status(self.client, self.sl_order, FUTURES)
-                self.logger.info(f'Stop Loss Status {sl_status}')
-                print(f'Stop Loss Status {sl_status}')
-                if sl_status == 'FILLED' or sl_status == 'CANCELED':
-                    self.logger.info('Stop Loss Triggered')
-                    print('Stop Loss Triggered')
+                self.log.info(f'Stop Loss Status: {sl_status}')
+                if sl_status == Client.ORDER_STATUS_FILLED or sl_status == Client.ORDER_STATUS_CANCELED:
+                    self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break
                 self._update_sl(r_df, BUY if self.signal == SELL else SELL)
@@ -216,14 +209,11 @@ class ReSys:
 
     def run(self):
         while self.is_live:
-            self.logger.info('ReSys is looking for a signal... wait')
-            print('ReSys is looking for a signal... wait')
+            self.log.info(Logger.WAITING_SIGNAL)
             self.is_live = self._is_bot_live()
             r_df = self._get_renko_bricks_df()
-            self.signal = self._get_signal(r_df)
-            # self.signal = BUY
+            self.signal = self._get_signal(r_df)            
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
-            self._open_position(Position(self.signal, r_df.iloc[-2]['close'], datetime.now(), False))
-            
+            self._open_position(Position(self.signal, datetime.now(), r_df.iloc[-2]['close'], False))
             self._watch_position()
 
