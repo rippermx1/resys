@@ -1,7 +1,7 @@
 from bot import _is_overbought, _is_oversold, _is_turning_down, _is_turning_up, _get_signal, _close_above_dc, _close_below_dc, _get_data
 from pandas import DataFrame
 
-from constants import BUY, SELL
+from constants import BUY, SELL, BRICK_SIZE_10
 from database import Database
 from bot import ReSys
 from binance import Client
@@ -139,3 +139,16 @@ def test_is_bot_live():
     resys_config = database.find_one('config', None)
     assert resys_config['is_live'] == True
 
+
+def test_trailing_price_buy():
+    signal = BUY
+    close = 100
+    _eval = (close + BRICK_SIZE_10) if signal == SELL else (close - BRICK_SIZE_10)
+    assert _eval < close
+
+
+def test_trailing_price_sell():
+    signal = SELL
+    close = 100
+    _eval = (close + BRICK_SIZE_10) if signal == SELL else (close - BRICK_SIZE_10)
+    assert _eval > close
