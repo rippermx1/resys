@@ -1,4 +1,4 @@
 .env
 __pycache__/
-std.log
+.log
 .vscode/
