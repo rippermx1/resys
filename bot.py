@@ -170,7 +170,7 @@ class ReSys:
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
-                close_position_with_tp(self.client, self.symbol, self.sl_price, BUY if self.signal == SELL else SELL)
+                # close_position_with_tp(self.client, self.symbol, self.sl_price, BUY if self.signal == SELL else SELL)
                 self._clean_up()          
 
 
