@@ -195,7 +195,7 @@ class ReSys:
             else:      
                 sl_status = get_order_status(self.client, self.sl_order, FUTURES)
                 self.log.info(f'Stop Loss Status: {sl_status}')
-                if sl_status == Client.ORDER_STATUS_FILLED or sl_status == Client.ORDER_STATUS_CANCELED:
+                if sl_status == Client.ORDER_STATUS_FILLED or sl_status == Client.ORDER_STATUS_CANCELED or sl_status == Client.ORDER_STATUS_EXPIRED:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break                
