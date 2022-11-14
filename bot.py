@@ -14,7 +14,7 @@ load_dotenv()
 
 class ReSys:
 
-    def __init__(self, exchange: Exchange, symbol, volume, market, leverage, brick_size, debug):
+    def __init__(self, exchange: Exchange, symbol, volume, market, leverage, brick_size, trailing_ptc, debug):
         self.log = Logger()
         self.exchange = exchange
         self.symbol = symbol
@@ -23,6 +23,7 @@ class ReSys:
         self.market = market
         self.leverage = leverage
         self.brick_size = brick_size
+        self.trailing_ptc = trailing_ptc
 
         self.signal = None
         self.entry_order = None
@@ -159,16 +160,17 @@ class ReSys:
     def _update_sl(self, renko_blocks: DataFrame, side: str):
         self.log.info('Updating Stop Loss Order')        
         # TODO: calculate distance between entry_price and current close to get PNL
-        distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 3)
+        distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 2)
         self.log.info(f'Distance: {distance}%')
         right_direction = (renko_blocks.iloc[-1]['close'] < self.entry_price) if side == BUY else (renko_blocks.iloc[-1]['close'] > self.entry_price)
         self.log.info(f'Direction: {right_direction}')
-        if distance > 0.25 and right_direction:
+        if (distance > self.trailing_ptc) and right_direction:
             mid = renko_blocks.iloc[-1]['DCM_5_5']
             self.sl_price = round_down_price(self.client, self.symbol, (mid - self.brick_size) if side == SELL else (mid + self.brick_size))
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
+                close_position_with_tp(self.client, self.symbol, self.sl_price, BUY if self.signal == SELL else SELL)
                 self._clean_up()          
 
 
