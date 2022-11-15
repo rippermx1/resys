@@ -6,9 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [22.0.3] - 2022-11-30
+### Added
+- Soon.
+
 ## [22.0.2] - 2022-11-15
 ### Added
-- soon.
+- Refactor Bot Logic.
+- Support for Expired Orders.
 
 ## [22.0.1] - 2022-10-31
 ### Added
