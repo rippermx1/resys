@@ -7,3 +7,4 @@ renko
 matplotlib
 pytest
 pymongo
+rich
