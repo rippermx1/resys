@@ -55,7 +55,7 @@
 
 * [ReSys Bot] Buy Spot in Extreme Oversold Stochastic Area
 * [ReSys Bot] Hedge Sell in Extreme Overbought Stochastic Area
-
+* [Resys Bot] Open Long and Short to hedge Bitcoin movements
 
 # Notes:
 

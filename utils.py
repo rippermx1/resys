@@ -153,9 +153,9 @@ def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float
     stop_order = None
     try:
         old_order_status = get_order_status(client, old_stop_order, FUTURES)
+        print(f'update_sl: ${old_order_status}')
         if old_order_status == Client.ORDER_STATUS_NEW:
             client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
-            print(side)
             stop_order = client.futures_create_order(
                 symbol=symbol,
                 side=side,

@@ -156,40 +156,47 @@ class ReSys:
         self.sl_price = None
         self.entry_order = None
 
+    def _get_distance_ptc(self, a, b)-> float:
+        ''' Get distance between two points in percentage '''
+        return round( (abs(a - b) / a) * 100, 2)
 
-    def _update_sl(self, renko_blocks: DataFrame, side: str):
+
+    def _update_sl(self, close, avg, side: str):
         self.log.info('Updating Stop Loss Order')        
         # TODO: calculate distance between entry_price and current close to get PNL
-        distance = round((abs(self.entry_price - renko_blocks.iloc[-1]['close'])/self.entry_price)*100, 2)
+        distance = self._get_distance_ptc(self.entry_price, close)
         self.log.info(f'Distance: {distance}%')
-        right_direction = (renko_blocks.iloc[-1]['close'] < self.entry_price) if side == BUY else (renko_blocks.iloc[-1]['close'] > self.entry_price)
+        right_direction = (close < self.entry_price) if (side == BUY) else (close > self.entry_price)
         self.log.info(f'Direction: {right_direction}')
         if (distance > self.trailing_ptc) and right_direction:
-            mid = renko_blocks.iloc[-1]['DCM_5_5']
-            self.sl_price = round_down_price(self.client, self.symbol, (mid - self.brick_size) if side == SELL else (mid + self.brick_size))
+            self.sl_price = self._get_stop_loss_price(avg, d=1)
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
-                # close_position_with_tp(self.client, self.symbol, self.sl_price, BUY if self.signal == SELL else SELL)
                 self._clean_up()          
 
+    def _is_time_to_take_profit(self, signal: str)-> bool:
+        ''' Determine if is time to take profit by a given signal '''
+        is_buy = signal == BUY
+        is_sell = signal == SELL
+        return is_buy if (self.signal == SELL) else is_sell
+
+
+    def _get_stop_loss_price(self, price, d):
+        ''' Get Stop Loss Price based on Signal Side and apply a Delta (d) Factor Stop Distance '''
+        sl_price = (price + self.brick_size * d) if (self.signal == SELL) else (price - self.brick_size * d)
+        return round_down_price(self.client, self.symbol, sl_price)
 
     def _watch_position(self):
         while self.in_position:
-            print(f'Monitoring Position: {self.signal}')
+            self.log.info(f'Monitoring Position: {self.entry_order.orderId}')
             r_df = self._get_renko_bricks_df()        
             exit_signal = self._get_signal(r_df)
             
-            is_buy = exit_signal == BUY
-            is_sell = exit_signal == SELL
-            is_time_to_take_profit = is_buy if self.signal == SELL else is_sell
-            
-            if is_time_to_take_profit:
+            if self._is_time_to_take_profit(exit_signal):
                 # TODO: Calculate distance between current close and entry_price to get PNL
                 # _get_current_pnl()
-                sl_price = r_df.iloc[-1]['close'] + self.brick_size if self.signal == SELL else r_df.iloc[-1]['close'] - self.brick_size
-                sl_price = round_down_price(self.client, self.symbol, sl_price)
-                close_position_with_tp(self.client, self.symbol, sl_price, BUY if self.signal == SELL else SELL)
+                close_position_with_tp(self.client, self.symbol, self._get_stop_loss_price(r_df.iloc[-1]['close'], d=3), BUY if (self.signal == SELL) else SELL)
                 self._clean_up()
                 break
             else:      
@@ -199,15 +206,13 @@ class ReSys:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break                
-                self._update_sl(r_df, BUY if self.signal == SELL else SELL)
+                self._update_sl(r_df.iloc[-1]['close'], r_df.iloc[-1]['DCM_5_5'], BUY if self.signal == SELL else SELL)
 
 
     def _open_position(self, position: Position):
         if self.market == FUTURES and not self.in_position:
             if self.entry_order is None and self.signal is not None:
-                # TODO: Calculate Stop Loss Price based on distance between entry_price and prev 2 closes plus brick_size with factor
-                _sl_price = (position.sl_price + self.brick_size * 3) if self.signal == SELL else (position.sl_price - self.brick_size * 3)
-                self.sl_price = round_down_price(self.client, self.symbol, _sl_price)
+                self.sl_price = self._get_stop_loss_price(position.sl_price, d=3)
                 self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
                 self.in_position = True
 
