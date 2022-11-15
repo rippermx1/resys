@@ -55,3 +55,9 @@
 
 * [ReSys Bot] Buy Spot in Extreme Oversold Stochastic Area
 * [ReSys Bot] Hedge Sell in Extreme Overbought Stochastic Area
+* [Resys Bot] Open Long and Short to hedge Bitcoin movements
+
+# Notes:
+
+* To start ReSys use command: 
+    - python main.py -symbol BTCUSDT -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25
