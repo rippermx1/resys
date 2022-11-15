@@ -156,24 +156,26 @@ class ReSys:
         self.sl_price = None
         self.entry_order = None
 
+
     def _get_distance_ptc(self, a, b)-> float:
         ''' Get distance between two points in percentage '''
         return round( (abs(a - b) / a) * 100, 2)
 
 
-    def _update_sl(self, close, avg, side: str):
+    def _update_sl(self, close, avg, protection_order_side: str):
         self.log.info('Updating Stop Loss Order')        
         # TODO: calculate distance between entry_price and current close to get PNL
         distance = self._get_distance_ptc(self.entry_price, close)
         self.log.info(f'Distance: {distance}%')
-        right_direction = (close < self.entry_price) if (side == BUY) else (close > self.entry_price)
+        right_direction = (close < self.entry_price) if (protection_order_side == BUY) else (close > self.entry_price)
         self.log.info(f'Direction: {right_direction}')
         if (distance > self.trailing_ptc) and right_direction:
             self.sl_price = self._get_stop_loss_price(avg, d=1)
-            self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, side)
+            self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
                 self._clean_up()          
+
 
     def _is_time_to_take_profit(self, signal: str)-> bool:
         ''' Determine if is time to take profit by a given signal '''
@@ -189,7 +191,7 @@ class ReSys:
 
     def _watch_position(self):
         while self.in_position:
-            self.log.info(f'Monitoring Position: {self.entry_order.orderId}')
+            self.log.info(f'Monitoring Position: {self.entry_order["orderId"]}')
             r_df = self._get_renko_bricks_df()        
             exit_signal = self._get_signal(r_df)
             
