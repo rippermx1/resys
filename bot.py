@@ -12,18 +12,20 @@ from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT,
 from utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
-class ReSys:
+class Bot:
 
-    def __init__(self, exchange: Exchange, symbol, volume, market, leverage, brick_size, trailing_ptc, debug):
+    def __init__(self, exchange: Exchange, symbol, interval, volume, market, leverage, brick_size, trailing_ptc, debug, pid):
         self.log = Logger()
         self.exchange = exchange
         self.symbol = symbol
+        self.interval = interval
         self.volume = volume
         self.debug = debug
         self.market = market
         self.leverage = leverage
         self.brick_size = brick_size
         self.trailing_ptc = trailing_ptc
+        self.pid = pid
 
         self.signal = None
         self.entry_order = None
@@ -40,14 +42,14 @@ class ReSys:
     def _get_data(self, hist: bool = False, start_str: str = None) -> DataFrame:
         data = None
         if hist and self.market == SPOT:
-            data = self.client.get_historical_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
+            data = self.client.get_historical_klines(symbol=self.symbol, interval=self.interval, start_str=start_str, limit=1000)
         else:
-            data = self.client.get_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
+            data = self.client.get_klines(symbol=self.symbol, interval=self.interval, limit=1000)
         
         if hist and self.market == FUTURES:
-            data = self.client.futures_historical_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, start_str=start_str, limit=1000)
+            data = self.client.futures_historical_klines(symbol=self.symbol, interval=self.interval, start_str=start_str, limit=1000)
         else:
-            data = self.client.futures_klines(symbol=self.symbol, interval=Client.KLINE_INTERVAL_5MINUTE, limit=1000)
+            data = self.client.futures_klines(symbol=self.symbol, interval=self.interval, limit=1000)
 
         data = DataFrame(data)
         data = data.iloc[:,[0,1,2,3,4,5]]
@@ -162,6 +164,11 @@ class ReSys:
         return round( (abs(a - b) / a) * 100, 2)
 
 
+    def _increase_trailing_ptc(self):
+        ''' Increase trailing percentage '''
+        self.trailing_ptc += self.trailing_ptc
+
+
     def _update_sl(self, close, avg, protection_order_side: str):
         self.log.info('Updating Stop Loss Order')        
         # TODO: calculate distance between entry_price and current close to get PNL
@@ -170,6 +177,7 @@ class ReSys:
         right_direction = (close < self.entry_price) if (protection_order_side == BUY) else (close > self.entry_price)
         self.log.info(f'Direction: {right_direction}')
         if (distance > self.trailing_ptc) and right_direction:
+            self._increase_trailing_ptc()
             self.sl_price = self._get_stop_loss_price(avg, d=1)
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))

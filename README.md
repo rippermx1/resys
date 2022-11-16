@@ -60,4 +60,4 @@
 # Notes:
 
 * To start ReSys use command: 
-    - python main.py -symbol BTCUSDT -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25
+    - python main.py -symbol BTCUSDT -interval 5m -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25
