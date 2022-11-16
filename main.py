@@ -22,6 +22,7 @@ args = parser.parse_args()
 if __name__ == "__main__":
     pid = os.getpid()
     # TODO: Get public and secret keys from db
+    
     binance = Exchange(public_key, secret_key)
     bot = Bot(binance, args.symbol, args.interval, args.volume, FUTURES, args.leverage, args.brick_size, args.trailing_ptc, debug=False, pid=pid)
     
