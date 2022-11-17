@@ -2,7 +2,7 @@
   "_id": {
     "$oid": "63606a61978acd34b83bbe71"
   },
-  "public_key": "eiaYQ0IImv97voRIaHnoR95C6Ajmj8L23gP636Lzx3pxGWTtF03JPZmTVw8Aq8aShklgGFmFXkJJqGMOfN5GUXZnfbRhJBEPpRxJ3PMa3Ary3ro5oRkiCRx0EXdn2u1C",
+  "public_key": "eiaYQ0IImv97voRIaHnoR95C6Ajmj8L23gP636Lzx3pxGWTtF03JPZmTVw8Aq8aS",
   "secret_key": "0k5CBxnfzjrw5zbiwuni5VqVmT6HLFlwU6gp0ImPgrHsLpfb8NLqSWUw4KNsaPg1",
   "accept_terms": true,
   "active": true,
@@ -24,10 +24,16 @@
       "pid": "",
       "symbol": "BTCUSDT",
       "interval": "5m",
-      "volume": "10",
-      "leverage": "50",
-      "brick_size": "10",
-      "trailing_ptc": "0.25"
+      "volume": 10,
+      "leverage": 50,
+      "brick_size": 10,
+      "trailing_ptc": 0.25,
+      "active": true,
+      "enable": true,
+      "status": "RUNNING",
+      "visible": true,
+      "uuid": "f132e48a-fdea-44a5-8c50-2782f45fe752"
     }
-  ]
+  ],
+  "secret": "52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2"
 }]

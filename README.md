@@ -59,5 +59,8 @@
 
 # Notes:
 
-* To start ReSys use command: 
-    - python main.py -symbol BTCUSDT -interval 5m -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25
+* To start ReSys (If DONT HAVE any Bot Created) use command: 
+    - python main.py -symbol BTCUSDT -interval 5m -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25 
+
+* To start ReSys (If you HAVE at least 1 Bot Created) use command: 
+    - python main.py -secret 52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2

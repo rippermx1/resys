@@ -8,7 +8,7 @@ from exchange import Exchange
 from database import Database
 from models import Signal, Position
 from logger import Logger
-from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT
+from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
 from utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
@@ -157,6 +157,7 @@ class Bot:
         self.sl_order = None
         self.sl_price = None
         self.entry_order = None
+        self.trailing_ptc = DEFAULT_TRAILING_PTC
 
 
     def _get_distance_ptc(self, a, b)-> float:
@@ -178,7 +179,7 @@ class Bot:
         self.log.info(f'Direction: {right_direction}')
         if (distance > self.trailing_ptc) and right_direction:
             self._increase_trailing_ptc()
-            self.sl_price = self._get_stop_loss_price(avg, d=1)
+            self.sl_price = self._get_stop_loss_price(avg, d=2)
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
@@ -216,13 +217,13 @@ class Bot:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break                
-                self._update_sl(r_df.iloc[-1]['close'], r_df.iloc[-1]['DCM_5_5'], BUY if self.signal == SELL else SELL)
+                self._update_sl(r_df.iloc[-1]['close'], r_df.iloc[-2]['DCM_5_5'], BUY if self.signal == SELL else SELL)
 
 
     def _open_position(self, position: Position):
         if self.market == FUTURES and not self.in_position:
             if self.entry_order is None and self.signal is not None:
-                self.sl_price = self._get_stop_loss_price(position.sl_price, d=3)
+                self.sl_price = self._get_stop_loss_price(position.sl_price, d=4)
                 self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
                 self.in_position = True
 
