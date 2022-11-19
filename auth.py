@@ -32,7 +32,8 @@ class Auth:
     def get_bot(self, uuid: str):
         ''' Get bot by uuid '''
         user = self._get_user()
-        return [b for b in user['bots'] if b['uuid'] == uuid] if user else None
+        bots = [b for b in user['bots'] if b['uuid'] == uuid] if user else None
+        return bots[0] if bots else None
         
 
     def _user_exist(self):
@@ -42,3 +43,8 @@ class Auth:
     def _user_have_bots(self)-> bool:
         ''' Check if user has a bot created '''
         return True if (len(self.user['bots']) > 0) else False
+
+
+    def update_bot_pid(self, uuid: str, pid: int):
+        ''' Update bot pid '''
+        return self.db.update_one(COLLECTION_USER, { 'secret': self.secret, 'bots.uuid': uuid }, { '$set': { 'bots.$.pid': pid } }) if self._user_exist() else None

@@ -38,6 +38,13 @@ class Bot:
 
         self.client = self.exchange.get_client()
         self.is_live = self._is_bot_live()
+        self._start_bot_info()
+
+
+    def _start_bot_info(self):
+        ''' Print bot info '''
+        self.log.info(f"Starting ReSys For: \nSymbol: {self.symbol}\nInterval: {self.interval}\nVolume: {self.volume}\nLeverage: {self.leverage}\nBrick Size: {self.brick_size}\nTrailing Ptc%: {self.trailing_ptc}\nPid: {self.pid}")
+
 
     def _get_data(self, hist: bool = False, start_str: str = None) -> DataFrame:
         data = None
