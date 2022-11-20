@@ -5,6 +5,7 @@ from constants import FUTURES
 from logger import Logger
 from auth import Auth
 import argparse
+from models import BotStatus
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-secret', '--secret', type=str, help='User Secret', required=False)
@@ -26,10 +27,16 @@ if __name__ == "__main__":
         os.kill(pid, 9)
 
     binance = Exchange(auth.user['public_key'], auth.user['secret_key'])
-    bot = Bot(binance, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], debug=False, pid=pid)    
+    bot = Bot(binance, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=False, pid=pid)    
+    auth.update_bot_pid(args.bot_id, pid)
     while user_bot['enable']:
         try:
-            auth.update_bot_pid(args.bot_id, pid)
+            if user_bot['status'] == BotStatus.STOPPED:
+                os.kill(pid, 9)
+
+            if user_bot['status'] == BotStatus.PAUSED:
+                print(f'Bot {args.bot_id} {BotStatus.PAUSED}')
+
             bot.run()
         except Exception as e:
             log.error(e)

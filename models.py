@@ -58,4 +58,7 @@ class User:
     bots: list = []
 
 
-
+class BotStatus:
+    RUNNING: str = "RUNNING"
+    STOPPED: str = "STOPPED"
+    PAUSED: str = "PAUSED"
