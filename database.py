@@ -22,8 +22,8 @@ class Database:
         return self.db[collection].find_one(query)
 
 
-    def update(self, collection, query, data):
-        self.db[collection].update(query, data, upsert=True)
+    def update_one(self, collection, query, data):
+        self.db[collection].update_one(query, data, upsert=True)
 
 
     def remove(self, collection, query):

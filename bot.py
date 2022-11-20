@@ -8,13 +8,15 @@ from exchange import Exchange
 from database import Database
 from models import Signal, Position
 from logger import Logger
-from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT
+from auth import Auth
+from models import BotStatus
+from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
 from utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
 class Bot:
 
-    def __init__(self, exchange: Exchange, symbol, interval, volume, market, leverage, brick_size, trailing_ptc, debug, pid):
+    def __init__(self, exchange: Exchange, symbol, interval, volume, market, leverage, brick_size, trailing_ptc, secret, bot_id, debug, pid):
         self.log = Logger()
         self.exchange = exchange
         self.symbol = symbol
@@ -26,6 +28,8 @@ class Bot:
         self.brick_size = brick_size
         self.trailing_ptc = trailing_ptc
         self.pid = pid
+        self.secret = secret
+        self.bot_id = bot_id
 
         self.signal = None
         self.entry_order = None
@@ -36,8 +40,15 @@ class Bot:
         self.in_position = False
         self.signal_saved = False
 
-        self.client = self.exchange.get_client()
-        self.is_live = self._is_bot_live()
+        self.client = self.exchange.get_client()        
+        self.status = self._bot_status()
+        self._start_bot_info()
+
+
+    def _start_bot_info(self):
+        ''' Print bot info '''
+        self.log.info(f"Starting ReSys For: \nSymbol: {self.symbol}\nInterval: {self.interval}\nVolume: {self.volume}\nLeverage: {self.leverage}\nBrick Size: {self.brick_size}\nTrailing Ptc%: {self.trailing_ptc}\nPid: {self.pid}")
+
 
     def _get_data(self, hist: bool = False, start_str: str = None) -> DataFrame:
         data = None
@@ -139,15 +150,10 @@ class Bot:
             self.log.info('Signal Saved')
 
 
-    def _is_bot_live(self, debug: bool = False) -> bool:
-        ''' Determine if bot is live '''
-        database = Database(DB_RESYS)
-        config = database.find_one('config', None)
-        is_live = config['is_live']
-        if debug:
-            self.log.info(f'Is Live: {is_live}')
-            print("is_live: {}".format(config))
-        return is_live
+    def _bot_status(self):
+        auth = Auth(secret=self.secret)
+        user_bot = auth.get_bot(self.bot_id)
+        return user_bot['status']
 
 
     def _clean_up(self):
@@ -157,6 +163,7 @@ class Bot:
         self.sl_order = None
         self.sl_price = None
         self.entry_order = None
+        self.trailing_ptc = DEFAULT_TRAILING_PTC
 
 
     def _get_distance_ptc(self, a, b)-> float:
@@ -178,7 +185,7 @@ class Bot:
         self.log.info(f'Direction: {right_direction}')
         if (distance > self.trailing_ptc) and right_direction:
             self._increase_trailing_ptc()
-            self.sl_price = self._get_stop_loss_price(avg, d=1)
+            self.sl_price = self._get_stop_loss_price(avg, d=2)
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
@@ -216,7 +223,7 @@ class Bot:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break                
-                self._update_sl(r_df.iloc[-1]['close'], r_df.iloc[-1]['DCM_5_5'], BUY if self.signal == SELL else SELL)
+                self._update_sl(r_df.iloc[-1]['close'], r_df.iloc[-2]['DCM_5_5'], BUY if self.signal == SELL else SELL)
 
 
     def _open_position(self, position: Position):
@@ -228,12 +235,13 @@ class Bot:
 
 
     def run(self):
-        while self.is_live:
+        self.status = self._bot_status()
+        while self.status == BotStatus.RUNNING:
             self.log.info(Logger.WAITING_SIGNAL)
-            self.is_live = self._is_bot_live()
+            self.status = self._bot_status()
             r_df = self._get_renko_bricks_df()
             self.signal = self._get_signal(r_df)            
             self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
-            self._open_position(Position(self.signal, datetime.now(), r_df.iloc[-2]['close'], False))
+            self._open_position(Position(self.signal, datetime.now(), r_df.iloc[-3]['close'], False))
             self._watch_position()
 

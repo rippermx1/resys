@@ -18,5 +18,22 @@
     "WRITE",
     "EXEC",
     "DEL"
-  ]
+  ],
+  "bots": [
+    {
+      "pid": "",
+      "symbol": "BTCUSDT",
+      "interval": "5m",
+      "volume": 20,
+      "leverage": 50,
+      "brick_size": 10,
+      "trailing_ptc": 0.15,
+      "active": true,
+      "enable": true,
+      "status": "RUNNING",
+      "visible": true,
+      "uuid": "f132e48a-fdea-44a5-8c50-2782f45fe752"
+    }
+  ],
+  "secret": "52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2"
 }]
