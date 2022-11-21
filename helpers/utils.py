@@ -3,7 +3,7 @@ import numpy as np
 from helpers.constants import FUTURES, SPOT
 from binance import Client
 import math
-from logger import Logger
+from helpers.logger import Logger
 
 log = Logger()
 

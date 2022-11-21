@@ -1,7 +1,7 @@
 from exchange import Exchange
 from bot import Bot
 import os
-from logger import Logger
+from helpers.logger import Logger
 from auth.auth import Auth
 import argparse
 from models import BotStatus

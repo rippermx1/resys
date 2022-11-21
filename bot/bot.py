@@ -7,7 +7,7 @@ import pandas_ta as ta
 from exchange import Exchange
 from database.db import Database
 from models import Signal, Position
-from logger import Logger
+from helpers.logger import Logger
 from auth.auth import Auth
 from models import BotStatus
 from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
