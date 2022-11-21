@@ -1,10 +1,9 @@
 from pandas import DataFrame
 import numpy as np
-from constants import FUTURES, SPOT
+from helpers.constants import FUTURES, SPOT
 from binance import Client
 import math
 from logger import Logger
-from constants import *
 
 log = Logger()
 

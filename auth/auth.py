@@ -53,4 +53,6 @@ class Auth:
 
     def _create_bot(self, bot):
         ''' Create a new bot '''
-        return self.db.update_one(COLLECTION_USER, { 'secret': self.secret }, { '$push': { 'bots': bot.dict() } }) if self._user_exist() else None
+        _bot = bot.dict()
+        _bot['uuid'] = self.generate_uuid()
+        return self.db.update_one(COLLECTION_USER, { 'secret': self.secret }, { '$push': { 'bots': _bot } }) if self._user_exist() else None

@@ -1,9 +1,8 @@
 from exchange import Exchange
 from bot import Bot
 import os
-from constants import FUTURES
 from logger import Logger
-from auth import Auth
+from auth.auth import Auth
 import argparse
 from models import BotStatus
 
@@ -29,7 +28,7 @@ if __name__ == "__main__":
     binance = Exchange(auth.user['public_key'], auth.user['secret_key'])
     bot = Bot(binance, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=False, pid=pid)    
     auth.update_bot_pid(args.bot_id, pid)
-    while user_bot['enable']:
+    while user_bot['enabled']:
         try:
             if user_bot['status'] == BotStatus.STOPPED:
                 os.kill(pid, 9)

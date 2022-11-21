@@ -5,13 +5,13 @@ from binance import Client
 from renko import Renko
 import pandas_ta as ta
 from exchange import Exchange
-from database.database import Database
+from database.db import Database
 from models import Signal, Position
 from logger import Logger
-from auth import Auth
+from auth.auth import Auth
 from models import BotStatus
-from constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
-from utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
+from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
+from helpers.utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
 load_dotenv()
 
 class Bot:
