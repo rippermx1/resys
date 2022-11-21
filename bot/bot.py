@@ -5,7 +5,7 @@ from binance import Client
 from renko import Renko
 import pandas_ta as ta
 from exchange import Exchange
-from database import Database
+from database.database import Database
 from models import Signal, Position
 from logger import Logger
 from auth import Auth

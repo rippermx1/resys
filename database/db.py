@@ -23,7 +23,7 @@ class Database:
 
 
     def update_one(self, collection, query, data):
-        self.db[collection].update_one(query, data, upsert=True)
+        return self.db[collection].update_one(query, data, upsert=True).raw_result
 
 
     def remove(self, collection, query):

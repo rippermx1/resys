@@ -1,6 +1,7 @@
-from database import Database
-from constants import DB_RESYS, COLLECTION_USER
+from database.db import Database
+from helpers.constants import DB_RESYS, COLLECTION_USER
 from uuid import uuid4
+import json
 
 class Auth:
 
@@ -48,3 +49,8 @@ class Auth:
     def update_bot_pid(self, uuid: str, pid: int):
         ''' Update bot pid '''
         return self.db.update_one(COLLECTION_USER, { 'secret': self.secret, 'bots.uuid': uuid }, { '$set': { 'bots.$.pid': pid } }) if self._user_exist() else None
+
+
+    def _create_bot(self, bot):
+        ''' Create a new bot '''
+        return self.db.update_one(COLLECTION_USER, { 'secret': self.secret }, { '$push': { 'bots': bot.dict() } }) if self._user_exist() else None
