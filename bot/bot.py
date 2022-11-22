@@ -184,9 +184,9 @@ class Bot:
         self.log.info(f'Distance: {distance}%')
         right_direction = (close < self.entry_price) if (protection_order_side == BUY) else (close > self.entry_price)
         self.log.info(f'Direction: {right_direction}')
-        if (distance > self.trailing_ptc) and right_direction:
+        if (distance > (self.trailing_ptc * 2)) and right_direction:
             self._increase_trailing_ptc()
-            self.sl_price = self._get_stop_loss_price(avg, d=2)
+            self.sl_price = self._get_stop_loss_price(avg, d=1)
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
             self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
             if self.sl_order is None:
