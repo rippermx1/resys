@@ -1,6 +1,6 @@
 from pandas import DataFrame
 import numpy as np
-from helpers.constants import FUTURES, SPOT
+from helpers.constants import FUTURES, SPOT, SELL, BUY
 from binance import Client
 import math
 from helpers.logger import Logger

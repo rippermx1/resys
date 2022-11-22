@@ -71,19 +71,19 @@ class Bot:
 
     def _is_overbought(self, df: DataFrame) -> bool:
         ''' Determine if is overbought '''
-        # s1 = df.iloc[-1]['STOCHk_14_2_4'] < df.iloc[-1]['STOCHd_14_2_4']
-        s2 = df.iloc[-2]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-2]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
-        s3 = df.iloc[-3]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-3]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
-        s4 = df.iloc[-4]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-4]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
+        # s1 = df.iloc[-1]['STOCHk'] < df.iloc[-1]['STOCHd']
+        s2 = df.iloc[-2]['STOCHk'] > STOCHASTIC_OVERBOUGHT and df.iloc[-2]['STOCHd'] > STOCHASTIC_OVERBOUGHT
+        s3 = df.iloc[-3]['STOCHk'] > STOCHASTIC_OVERBOUGHT and df.iloc[-3]['STOCHd'] > STOCHASTIC_OVERBOUGHT
+        s4 = df.iloc[-4]['STOCHk'] > STOCHASTIC_OVERBOUGHT and df.iloc[-4]['STOCHd'] > STOCHASTIC_OVERBOUGHT
         return s2 and s3 and s4
 
 
     def _is_oversold(self, df: DataFrame) -> bool:
         ''' Determine if is oversold '''
-        # b1 = df.iloc[-1]['STOCHk_14_2_4'] > df.iloc[-1]['STOCHd_14_2_4']
-        b2 = df.iloc[-2]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-2]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
-        b3 = df.iloc[-3]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-3]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
-        b4 = df.iloc[-4]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-4]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
+        # b1 = df.iloc[-1]['STOCHk'] > df.iloc[-1]['STOCHd']
+        b2 = df.iloc[-2]['STOCHk'] < STOCHASTIC_OVERSOLD and df.iloc[-2]['STOCHd'] < STOCHASTIC_OVERSOLD
+        b3 = df.iloc[-3]['STOCHk'] < STOCHASTIC_OVERSOLD and df.iloc[-3]['STOCHd'] < STOCHASTIC_OVERSOLD
+        b4 = df.iloc[-4]['STOCHk'] < STOCHASTIC_OVERSOLD and df.iloc[-4]['STOCHd'] < STOCHASTIC_OVERSOLD
         return b2 and b3 and b4
 
 
@@ -117,7 +117,8 @@ class Bot:
         dc = DataFrame(ta.donchian(high=r_df['close'], low=r_df['close'] ,lower_length=5, upper_length=5)).drop(columns=['DCL_5_5', 'DCU_5_5'])
         r_df = r_df.join(dc)
 
-        stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=4))
+        stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=8))
+        stoch.columns = ['STOCHk', 'STOCHd']
         r_df = r_df.join(stoch)
         if self.debug:
             self.log.debug(r_df.tail(5))            
@@ -140,7 +141,7 @@ class Bot:
         ''' Save signal Into Database '''
         if signal.side is not None and not self.signal_saved:
             database = Database(DB_RESYS)
-            database.insert('signal', {
+            database.insert_one('signal', {
                 'side': signal.side, 
                 'date': signal.date,
                 'close': signal.close,
@@ -239,9 +240,9 @@ class Bot:
         while self.status == BotStatus.RUNNING:
             self.log.info(Logger.WAITING_SIGNAL)
             self.status = self._bot_status()
-            r_df = self._get_renko_bricks_df()
-            self.signal = self._get_signal(r_df)            
-            self._save_signal(Signal(self.signal, datetime.now(), r_df.iloc[-1]['close'], False))            
-            self._open_position(Position(self.signal, datetime.now(), r_df.iloc[-3]['close'], False))
+            data = self._get_renko_bricks_df()
+            self.signal = self._get_signal(data)       
+            self._save_signal(Signal(self.signal, datetime.now(), data.iloc[-1]['close'], False))            
+            self._open_position(Position(self.signal, datetime.now(), data.iloc[-3]['close'], False))
             self._watch_position()
 

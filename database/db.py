@@ -10,7 +10,7 @@ class Database:
         self.db = self.client[f'{db_name}']
 
 
-    def insert(self, collection, data):
+    def insert_one(self, collection, data):
         self.db[collection].insert_one(data)
 
 

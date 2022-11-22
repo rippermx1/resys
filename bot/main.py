@@ -26,7 +26,7 @@ if __name__ == "__main__":
         os.kill(pid, 9)
 
     binance = Exchange(auth.user['public_key'], auth.user['secret_key'])
-    bot = Bot(binance, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=False, pid=pid)    
+    bot = Bot(binance, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=True, pid=pid)    
     auth.update_bot_pid(args.bot_id, pid)
     while user_bot['enabled']:
         try:
