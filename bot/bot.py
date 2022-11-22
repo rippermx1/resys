@@ -71,20 +71,20 @@ class Bot:
 
     def _is_overbought(self, df: DataFrame) -> bool:
         ''' Determine if is overbought '''
-        s1 = df.iloc[-1]['STOCHk_14_2_4'] < df.iloc[-1]['STOCHd_14_2_4']
+        # s1 = df.iloc[-1]['STOCHk_14_2_4'] < df.iloc[-1]['STOCHd_14_2_4']
         s2 = df.iloc[-2]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-2]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
         s3 = df.iloc[-3]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-3]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
         s4 = df.iloc[-4]['STOCHk_14_2_4'] > STOCHASTIC_OVERBOUGHT and df.iloc[-4]['STOCHd_14_2_4'] > STOCHASTIC_OVERBOUGHT
-        return s1 and s2 and s3 and s4
+        return s2 and s3 and s4
 
 
     def _is_oversold(self, df: DataFrame) -> bool:
         ''' Determine if is oversold '''
-        b1 = df.iloc[-1]['STOCHk_14_2_4'] > df.iloc[-1]['STOCHd_14_2_4']
+        # b1 = df.iloc[-1]['STOCHk_14_2_4'] > df.iloc[-1]['STOCHd_14_2_4']
         b2 = df.iloc[-2]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-2]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
         b3 = df.iloc[-3]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-3]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
         b4 = df.iloc[-4]['STOCHk_14_2_4'] < STOCHASTIC_OVERSOLD and df.iloc[-4]['STOCHd_14_2_4'] < STOCHASTIC_OVERSOLD
-        return b1 and b2 and b3 and b4
+        return b2 and b3 and b4
 
 
     def _is_turning_down(self, df: DataFrame) -> bool:
