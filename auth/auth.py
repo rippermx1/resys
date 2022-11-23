@@ -56,3 +56,8 @@ class Auth:
         _bot = bot.dict()
         _bot['uuid'] = self.generate_uuid()
         return self.db.update_one(COLLECTION_USER, { 'secret': self.secret }, { '$push': { 'bots': _bot } }) if self._user_exist() else None
+
+
+    def _get_bots(self):
+        ''' Get all bots from user '''
+        return self.user['bots'] if self._user_exist() else None

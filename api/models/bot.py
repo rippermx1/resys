@@ -19,3 +19,7 @@ class Bot(BaseModel):
 class NewBotRequest(BaseModel):
     secret: str = None
     bot: Bot = None
+
+
+class UserSecret(BaseModel):
+    secret: str = None

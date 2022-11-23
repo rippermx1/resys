@@ -1,0 +1,12 @@
+<div class="p-5">
+    <mat-card *ngFor="let b of bots">
+        <p>{{b | json}}</p>
+        <mat-card-header>
+            <div mat-card-avatar>
+                <img [src]="'https://cryptoicons.org/api/color/'+b.short_symbol+'/40'" alt="">
+            </div>
+            <mat-card-title>{{b.symbol}}</mat-card-title>
+            <mat-card-subtitle class="bot-status">{{b.status}}</mat-card-subtitle>
+        </mat-card-header>        
+    </mat-card>
+</div>
