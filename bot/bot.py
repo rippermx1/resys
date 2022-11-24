@@ -244,5 +244,6 @@ class Bot:
             self.signal = self._get_signal(data)       
             self._save_signal(Signal(self.signal, datetime.now(), data.iloc[-1]['close'], False))            
             self._open_position(Position(self.signal, datetime.now(), data.iloc[-3]['close'], False))
+            # TODO: Takeprofit not necessary
             self._watch_position()
 

@@ -9,6 +9,7 @@ import { UserService } from 'src/app/services/user.service';
 })
 export class HomeComponent implements OnInit {
   bots: Bot[] = [];
+  panelOpenState = false;
 
   constructor(
     private userService: UserService

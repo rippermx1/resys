@@ -1,12 +1,54 @@
-<div class="p-5">
-    <mat-card *ngFor="let b of bots">
-        <p>{{b | json}}</p>
-        <mat-card-header>
-            <div mat-card-avatar>
-                <img [src]="'https://cryptoicons.org/api/color/'+b.short_symbol+'/40'" alt="">
-            </div>
-            <mat-card-title>{{b.symbol}}</mat-card-title>
-            <mat-card-subtitle class="bot-status">{{b.status}}</mat-card-subtitle>
-        </mat-card-header>        
-    </mat-card>
+<div class="p-10">
+    <mat-accordion>
+        <mat-expansion-panel (opened)="panelOpenState = true" (closed)="panelOpenState = false" *ngFor="let b of bots">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    <div mat-card-avatar class="container-h">
+                        <img [src]="'assets/svg/icon/'+b.short_symbol+'.svg'" [alt]="b.short_symbol">
+                    </div>
+                    <div class="container-v pl-5">
+                        <p class="bot-symbol fs-14 fw-500 m-0">{{b.symbol}}</p>
+                        <p class="bot-status fs-12 m-0">{{b.status}}</p>
+                    </div>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div><!-- {{b | json}} -->
+                <div class="container-v">
+                    <div class="container-actions mt-5 mb-5 p-5">
+                        <p class="fs-12 m-0"><mat-icon>play_arrow</mat-icon></p>
+                        <p class="fs-12 m-0"><mat-icon>pause</mat-icon></p>
+                        <p class="fs-12 m-0"><mat-icon>clear</mat-icon></p>
+                    </div>
+                </div>
+                <div class="container-v">
+                    <div class="container-h">
+                        <p class="fs-12 m-0">PNL (Avg)</p>
+                        <p class="fs-12 m-0">{{20 | currency}}</p>
+                    </div>
+                </div>
+                <div class="container-v">
+                    <div class="container-h">
+                        <p class="fs-12 m-0">interval</p>
+                        <p class="fs-12 m-0">{{b.interval}}</p>
+                    </div>
+                    <div class="container-h">
+                        <p class="fs-12 m-0">volume</p>
+                        <p class="fs-12 m-0">{{b.volume}}</p>
+                    </div>
+                    <div class="container-h">
+                        <p class="fs-12 m-0">leverage</p>
+                        <p class="fs-12 m-0">{{b.leverage}}</p>
+                    </div>
+                    <div class="container-h">
+                        <p class="fs-12 m-0">brick_size</p>
+                        <p class="fs-12 m-0">{{b.brick_size}}</p>
+                    </div>
+                    <div class="container-h">
+                        <p class="fs-12 m-0">trailing_ptc</p>
+                        <p class="fs-12 m-0">{{b.trailing_ptc}}</p>
+                    </div>
+                </div>
+            </div>            
+        </mat-expansion-panel>
+    </mat-accordion>
 </div>
