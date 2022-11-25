@@ -15,37 +15,42 @@
             <div><!-- {{b | json}} -->
                 <div class="container-v">
                     <div class="container-actions mt-5 mb-5 p-5">
-                        <p class="fs-12 m-0"><mat-icon>play_arrow</mat-icon></p>
-                        <p class="fs-12 m-0"><mat-icon>pause</mat-icon></p>
-                        <p class="fs-12 m-0"><mat-icon>clear</mat-icon></p>
+                        <p class="fs-12 m-0 pointer"><mat-icon>play_arrow</mat-icon></p>
+                        <p class="fs-12 m-0 pointer"><mat-icon>pause</mat-icon></p>
+                        <p class="fs-12 m-0 pointer"><mat-icon class="red">delete</mat-icon></p>
+                        <p class="fs-12 m-0 pointer"><mat-icon>edit</mat-icon></p>
                     </div>
                 </div>
-                <div class="container-v">
+                <div class="container-v container-v p-5 mt-5 mb-5">
                     <div class="container-h">
-                        <p class="fs-12 m-0">PNL (Avg)</p>
-                        <p class="fs-12 m-0">{{20 | currency}}</p>
+                        <p class="fs-12 m-0 fw-500 pointer"><a href="" class="pnl-flex pnl-color">See Current Average PNL<mat-icon>refresh</mat-icon></a></p>
+                        <p class="fs-12 m-0 fw-600 pointer pnl-color">{{20 | currency}}</p>
                     </div>
                 </div>
-                <div class="container-v">
+                <div class="container-v p-5 mt-5 mb-5 br">
                     <div class="container-h">
-                        <p class="fs-12 m-0">interval</p>
-                        <p class="fs-12 m-0">{{b.interval}}</p>
+                        <p class="fs-12 m-0 pointer">Interval: </p>
+                        <p class="fs-12 m-0 fw-600 pointer">{{b.interval}}</p>           
                     </div>
+                    <mat-divider class="m-1"></mat-divider>
                     <div class="container-h">
-                        <p class="fs-12 m-0">volume</p>
-                        <p class="fs-12 m-0">{{b.volume}}</p>
+                        <p class="fs-12 m-0 pointer">Volume:</p>    
+                        <p class="fs-12 m-0 fw-600 pointer">{{b.volume}} USD</p>                   
                     </div>
+                    <mat-divider class="m-1"></mat-divider>
                     <div class="container-h">
-                        <p class="fs-12 m-0">leverage</p>
-                        <p class="fs-12 m-0">{{b.leverage}}</p>
+                        <p class="fs-12 m-0 pointer">Leverage:</p>
+                        <p class="fs-12 m-0 fw-600 pointer">x{{b.leverage}}</p>                        
                     </div>
+                    <mat-divider class="m-1"></mat-divider>
                     <div class="container-h">
-                        <p class="fs-12 m-0">brick_size</p>
-                        <p class="fs-12 m-0">{{b.brick_size}}</p>
+                        <p class="fs-12 m-0 pointer">Brick Size:</p>
+                        <p class="fs-12 m-0 fw-600 pointer">{{b.brick_size}} USD</p>
                     </div>
+                    <mat-divider class="m-1"></mat-divider>
                     <div class="container-h">
-                        <p class="fs-12 m-0">trailing_ptc</p>
-                        <p class="fs-12 m-0">{{b.trailing_ptc}}</p>
+                        <p class="fs-12 m-0 pointer">Trailing Percentage</p>
+                        <p class="fs-12 m-0 fw-600 pointer">{{b.trailing_ptc}}%</p>                        
                     </div>
                 </div>
             </div>            
