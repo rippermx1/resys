@@ -178,17 +178,16 @@ class Bot:
 
 
     def _update_sl(self, close, avg, protection_order_side: str):
-        self.log.info('Updating Stop Loss Order')        
-        # TODO: calculate distance between entry_price and current close to get PNL
+        self.log.info(f'{Logger.UPDATING_SL}')        
         distance = self._get_distance_ptc(self.entry_price, close)
-        self.log.info(f'Distance: {distance}%')
         right_direction = (close < self.entry_price) if (protection_order_side == BUY) else (close > self.entry_price)
-        self.log.info(f'Direction: {right_direction}')
+        sign = '+' if right_direction else '-'
+        self.log.info(f'Distance: {sign}{distance}%')
         if (distance > (self.trailing_ptc * 2)) and right_direction:
             self._increase_trailing_ptc()
             self.sl_price = self._get_stop_loss_price(avg, d=1)
             self.sl_order = update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
-            self.log.info('Stop Loss Order Updated: {}'.format(self.sl_order))
+            self.log.info(f'{Logger.SL_UPDATED} {self.sl_order["orderId"]}')
             if self.sl_order is None:
                 self._clean_up()          
 
@@ -207,24 +206,24 @@ class Bot:
 
     def _watch_position(self):
         while self.in_position:
-            self.log.info(f'Monitoring Position: {self.entry_order["orderId"]}')
-            r_df = self._get_renko_bricks_df()        
-            exit_signal = self._get_signal(r_df)
-            
+            self.log.info(f'{Logger.MONITORING_POSITION} {self.entry_order["orderId"]}')
+            data = self._get_renko_bricks_df()        
+            exit_signal = self._get_signal(data)
+            sl_status = get_order_status(self.client, self.sl_order, FUTURES)
+            self.log.info(f'{Logger.STOP_LOSS_STATUS} {sl_status}')
+
+            # TODO: Calculate distance between current close and entry_price to get PNL
+            # _get_current_pnl()
+
             if self._is_time_to_take_profit(exit_signal):
-                # TODO: Calculate distance between current close and entry_price to get PNL
-                # _get_current_pnl()
-                close_position_with_tp(self.client, self.symbol, self._get_stop_loss_price(r_df.iloc[-1]['close'], d=3), BUY if (self.signal == SELL) else SELL)
-                self._clean_up()
+                self._update_sl(data.iloc[-1]['close'], data.iloc[-1]['DCM_5_5'], BUY if self.signal == SELL else SELL)
                 break
-            else:      
-                sl_status = get_order_status(self.client, self.sl_order, FUTURES)
-                self.log.info(f'Stop Loss Status: {sl_status}')
+            else:
                 if sl_status == Client.ORDER_STATUS_FILLED or sl_status == Client.ORDER_STATUS_CANCELED or sl_status == Client.ORDER_STATUS_EXPIRED:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break                
-                self._update_sl(r_df.iloc[-1]['close'], r_df.iloc[-2]['DCM_5_5'], BUY if self.signal == SELL else SELL)
+                self._update_sl(data.iloc[-1]['close'], data.iloc[-3]['DCM_5_5'], BUY if self.signal == SELL else SELL)
 
 
     def _open_position(self, position: Position):
@@ -244,6 +243,5 @@ class Bot:
             self.signal = self._get_signal(data)       
             self._save_signal(Signal(self.signal, datetime.now(), data.iloc[-1]['close'], False))            
             self._open_position(Position(self.signal, datetime.now(), data.iloc[-3]['close'], False))
-            # TODO: Takeprofit not necessary
             self._watch_position()
 

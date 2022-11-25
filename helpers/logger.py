@@ -6,8 +6,12 @@ class Logger():
     WAITING_SIGNAL = 'Looking for a Signal... please wait'
     SIGNAL_FOUND = 'Signal Found'
     STOP_LOSS_TRIGGERED = 'Stop Loss Triggered'
+    STOP_LOSS_STATUS = 'Stop Loss Status:'
     MANUAL_EXIT_TRIGGERED = 'Manual Exit Triggered'
     GETTIN_BEST_PRICE = 'Trying to get best price'
+    MONITORING_POSITION = 'Monitoring Position:'
+    UPDATING_SL = 'Updating Stop Loss Order'
+    SL_UPDATED = 'Stop Loss Order Updated:'
     
     def __init__(self):
         logging.basicConfig(filename="./std.log", format='%(asctime)s %(message)s', filemode='w')
