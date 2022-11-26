@@ -1,3 +1,5 @@
+$base_color: #e2e2e2
+
 .bot-status::after
     font-family: "Material Icons"
     content: "fiber_manual_record"
@@ -11,14 +13,14 @@
     justify-content: space-between
     align-content: center
     border-radius: 5px
-    border: 1px solid #e2e2e2
+    border: 1px solid $base_color
 
 .container-actions p
     display: flex
 
 .br
     border-radius: 5px
-    border: 1px solid #e2e2e2
+    border: 1px solid $base_color
 
 .pnl-flex
     display: flex
@@ -35,3 +37,6 @@
 
 .pointer
     cursor: pointer
+
+.bg-header
+    background-color: $base_color
