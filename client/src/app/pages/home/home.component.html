@@ -6,7 +6,7 @@
 
 <div class="p-10">
     <mat-accordion>
-        <mat-expansion-panel (opened)="panelOpenState = true" (closed)="panelOpenState = false" *ngFor="let b of bots">
+        <mat-expansion-panel (opened)="onOpen(b)" (closed)="panelOpenState = false" *ngFor="let b of bots">
             <mat-expansion-panel-header>
                 <mat-panel-title>
                     <div mat-card-avatar class="container-h">
@@ -21,10 +21,10 @@
             <div><!-- {{b | json}} -->
                 <div class="container-v">
                     <div class="container-actions mt-5 mb-5 p-5">
-                        <p class="fs-12 m-0 pointer"><mat-icon>play_arrow</mat-icon></p>
-                        <p class="fs-12 m-0 pointer"><mat-icon>pause</mat-icon></p>
-                        <p class="fs-12 m-0 pointer"><mat-icon class="red">delete</mat-icon></p>
-                        <p class="fs-12 m-0 pointer"><mat-icon>edit</mat-icon></p>
+                        <p class="fs-12 m-0 pointer" (click)="turnOn()"><mat-icon>power_settings_new</mat-icon></p>
+                        <p class="fs-12 m-0 pointer" (click)="pause(b)"><mat-icon>{{b.status=='RUNNING' ? 'pause' : 'play_arrow'}}</mat-icon></p>
+                        <p class="fs-12 m-0 pointer" (click)="edit(b)"><mat-icon>edit</mat-icon></p>
+                        <p class="fs-12 m-0 pointer" (click)="delete()"><mat-icon class="red">delete</mat-icon></p>
                     </div>
                 </div>
                 <div class="container-v container-v p-5 mt-5 mb-5">
@@ -34,29 +34,63 @@
                     </div>
                 </div>
                 <div class="container-v p-5 mt-5 mb-5 br">
-                    <div class="container-h">
+                    <div class="container-h mt-5 mb-5">
                         <p class="fs-12 m-0 pointer">Interval: </p>
-                        <p class="fs-12 m-0 fw-600 pointer">{{b.interval}}</p>           
+                        <p class="fs-14 m-0 fw-600 pointer" *ngIf="!editing">{{b.interval}}</p>
+                        <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                            <button class="btn-menu-edit fw-600" mat-button [matMenuTriggerFor]="interval">{{intervalParameter.label}}<mat-icon>arrow_drop_down</mat-icon></button>
+                            <mat-menu #interval="matMenu">
+                                <button class="fw-500" mat-menu-item (click)="onClick(o, 'interval')" *ngFor="let o of intervalParameter.options">{{o}}</button>
+                            </mat-menu>
+                        </p>                        
                     </div>
                     <mat-divider class="m-1"></mat-divider>
-                    <div class="container-h">
+                    <div class="container-h mt-5 mb-5">
                         <p class="fs-12 m-0 pointer">Volume:</p>    
-                        <p class="fs-12 m-0 fw-600 pointer">{{b.volume}} USD</p>                   
+                        <p class="fs-14 m-0 fw-600 pointer" *ngIf="!editing">{{b.volume}} USD</p> 
+                        <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                            <button class="btn-menu-edit fw-600" mat-button [matMenuTriggerFor]="volume">{{volumeParameter.label}} USD<mat-icon>arrow_drop_down</mat-icon></button>
+                            <mat-menu #volume="matMenu">
+                                <button class="fw-500" mat-menu-item (click)="onClick(o, 'volume')" *ngFor="let o of volumeParameter.options">{{o}} USD</button>
+                            </mat-menu>
+                        </p>                  
                     </div>
                     <mat-divider class="m-1"></mat-divider>
-                    <div class="container-h">
+                    <div class="container-h mt-5 mb-5">
                         <p class="fs-12 m-0 pointer">Leverage:</p>
-                        <p class="fs-12 m-0 fw-600 pointer">x{{b.leverage}}</p>                        
+                        <p class="fs-14 m-0 fw-600 pointer" *ngIf="!editing">x{{b.leverage}}</p>                        
+                        <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                            <button class="btn-menu-edit fw-600" mat-button [matMenuTriggerFor]="leverage">x{{leverageParameter.label}}<mat-icon>arrow_drop_down</mat-icon></button>
+                            <mat-menu #leverage="matMenu">
+                                <button class="fw-500" mat-menu-item (click)="onClick(o, 'leverage')" *ngFor="let o of leverageParameter.options">x{{o}}</button>
+                            </mat-menu>
+                        </p>      
                     </div>
                     <mat-divider class="m-1"></mat-divider>
-                    <div class="container-h">
+                    <div class="container-h mt-5 mb-5">
                         <p class="fs-12 m-0 pointer">Brick Size:</p>
-                        <p class="fs-12 m-0 fw-600 pointer">{{b.brick_size}} USD</p>
+                        <p class="fs-14 m-0 fw-600 pointer" *ngIf="!editing">{{b.brick_size}} USD</p>
+                        <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                            <button class="btn-menu-edit fw-600" mat-button [matMenuTriggerFor]="bricksize">{{brickSizeParameter.label}} USD<mat-icon>arrow_drop_down</mat-icon></button>
+                            <mat-menu #bricksize="matMenu">
+                                <button class="fw-500" mat-menu-item (click)="onClick(o, 'bricksize')" *ngFor="let o of brickSizeParameter.options">{{o}} USD</button>
+                            </mat-menu>
+                        </p>
                     </div>
                     <mat-divider class="m-1"></mat-divider>
-                    <div class="container-h">
+                    <div class="container-h mt-5 mb-5">
                         <p class="fs-12 m-0 pointer">Trailing Percentage</p>
-                        <p class="fs-12 m-0 fw-600 pointer">{{b.trailing_ptc}}%</p>                        
+                        <p class="fs-14 m-0 fw-600 pointer" *ngIf="!editing">{{b.trailing_ptc}}%</p>                        
+                        <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                            <button class="btn-menu-edit fw-600" mat-button [matMenuTriggerFor]="trailingPercentage">{{trailingPercentageParameter.label}}%<mat-icon>arrow_drop_down</mat-icon></button>
+                            <mat-menu #trailingPercentage="matMenu">
+                                <button class="fw-500" mat-menu-item (click)="onClick(o, 'trailingptc')" *ngFor="let o of trailingPercentageParameter.options">{{o}}%</button>
+                            </mat-menu>
+                        </p>
+                    </div>
+                    <div class="container-h p-10" *ngIf="editing">
+                        <button mat-stroked-button (click)="editing = !editing">Cancel</button>
+                        <button mat-stroked-button color="primary" (click)="openDialog()">Save</button>
                     </div>
                 </div>
             </div>            

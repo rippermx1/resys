@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { CrudBotComponent } from 'src/app/components/modals/crud-bot/crud-bot.component';
 import Bot from 'src/app/interfaces/bot.interface';
+import { Parameter } from 'src/app/interfaces/parameter.interface';
 import { UserService } from 'src/app/services/user.service';
+import { ParameterService } from 'src/app/shared/services/parameter.service';
 
 @Component({
   selector: 'app-home',
@@ -12,11 +14,25 @@ import { UserService } from 'src/app/services/user.service';
 export class HomeComponent implements OnInit {
   bots: Bot[] = [];
   panelOpenState = false;
+  running: boolean = false;
+  editing: boolean = false;
+  intervalParameter: Parameter = {options: [], label: ''};
+  volumeParameter: Parameter = {options: [], label: ''};
+  leverageParameter: Parameter = {options: [], label: ''};
+  brickSizeParameter: Parameter = {options: [], label: ''};
+  trailingPercentageParameter: Parameter = {options: [], label: ''};
 
   constructor(
     private userService: UserService,
-    private dialog: MatDialog
-  ) { }
+    private dialog: MatDialog,
+    private parameterService: ParameterService
+  ) { 
+    this.intervalParameter = this.parameterService.getInterval();
+    this.volumeParameter = this.parameterService.getVolume();
+    this.leverageParameter = this.parameterService.getLeverage();
+    this.brickSizeParameter = this.parameterService.getBrickSize();
+    this.trailingPercentageParameter = this.parameterService.getTrailingPercentage();
+  }
 
   ngOnInit(): void {
     let secret = "52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2"
@@ -26,11 +42,58 @@ export class HomeComponent implements OnInit {
   }
 
   openDialog() {
-    const dialogRef = this.dialog.open(CrudBotComponent);
+    const dialogRef = this.dialog.open(CrudBotComponent, {data: {title: 'Create Bot'}});
 
     dialogRef.afterClosed().subscribe(result => {
       console.log(`Dialog result: ${result}`);
     });
+  }
+
+  turnOn() {}
+
+  delete() {
+
+  }
+
+  edit(bot: Bot) {
+    this.editing = !this.editing;
+    console.log(bot);
+    this.intervalParameter.label = bot.interval.toString();
+    this.volumeParameter.label = bot.volume.toString();
+    this.leverageParameter.label = bot.leverage.toString();
+    this.brickSizeParameter.label = bot.brick_size.toString();
+    this.trailingPercentageParameter.label = bot.trailing_ptc.toString();
+  }
+
+  onOpen(bot: Bot) {
+    console.log(bot);
+    this.panelOpenState = true;
+  }
+
+  pause(bot: Bot) {
+    this.running = !this.running;
+    bot.status = (this.running) ? 'PAUSED' : 'RUNNING';
+  }
+
+  onClick(option: any, menu: string): void {
+    console.log(option);
+    switch (menu) {
+      case 'interval':
+        this.intervalParameter.label = option;
+        break;
+      case 'volume':
+        this.volumeParameter.label = option;
+        break;
+      case 'leverage':
+        this.leverageParameter.label = option;
+        break;
+      case 'bricksize':
+        this.brickSizeParameter.label = option;
+        break;
+      case 'trailingptc':
+        this.trailingPercentageParameter.label = option;
+        break;
+    }
   }
 
 }

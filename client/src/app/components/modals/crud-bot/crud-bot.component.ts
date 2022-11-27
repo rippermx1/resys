@@ -6,7 +6,6 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./crud-bot.component.sass']
 })
 export class CrudBotComponent implements OnInit {
-
   symbolOptions = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
   symbolLabel = this.symbolOptions[0];
   intervalOptions = ['5m', '15m', '1h'];
