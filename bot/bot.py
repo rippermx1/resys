@@ -11,7 +11,7 @@ from helpers.logger import Logger
 from auth.auth import Auth
 from models import BotStatus
 from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
-from helpers.utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl
+from helpers.utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl, get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit
 load_dotenv()
 
 class Bot:
@@ -114,10 +114,10 @@ class Bot:
         renko.create_renko()
         r_df = DataFrame(renko.bricks)
 
-        dc = DataFrame(ta.donchian(high=r_df['close'], low=r_df['close'] ,lower_length=5, upper_length=5)).drop(columns=['DCL_5_5', 'DCU_5_5'])
+        dc = DataFrame(ta.donchian(high=r_df['close'], low=r_df['close'] ,lower_length=6, upper_length=6)).drop(columns=['DCL_6_6', 'DCU_6_6'])
         r_df = r_df.join(dc)
 
-        stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=14, d=2, smooth_k=8))
+        stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=40, d=2, smooth_k=12))
         stoch.columns = ['STOCHk', 'STOCHd']
         r_df = r_df.join(stoch)
         if self.debug:
@@ -234,7 +234,38 @@ class Bot:
                 self.in_position = True
 
 
+    def _detect_zones(self):
+        self.interval = Client.KLINE_INTERVAL_5MINUTE
+        data = self._get_data()
+        data = get_window_data(150, data)#self.window_size
+        segment = int(150/4)
+        #print(segment)
+        a = data.iloc[-segment*4:-segment*3]
+        b = data.iloc[-segment*3:-segment*2]
+        c = data.iloc[-segment*2:-segment]
+        d = data.iloc[-segment:]
+        
+        [max_a, min_a] = get_maximas(a), get_minimas(a)
+        [max_b, min_b] = get_maximas(b), get_minimas(b)
+        [max_c, min_c] = get_maximas(c), get_minimas(c)
+        [max_d, min_d] = get_maximas(d), get_minimas(d)
+        # print(max_a, min_a)
+        # print(max_b, min_b)
+        # print(max_c, min_c)
+        # print(max_d, min_d)
+
+        sell_zone = get_maximas_limit(get_avg_extremas(max_a, max_b, max_c, max_d), 1)
+        buy_zone  = get_maximas_limit(get_avg_extremas(min_a, min_b, min_c, min_d), 1)
+        print(sell_zone, buy_zone)
+        return [sell_zone, buy_zone]
+
+
+
     def run(self):
+        # Zone Detection
+        detect_zones = True
+        if detect_zones:
+            [sell_zone, buy_zone] = self._detect_zones()            
         self.status = self._bot_status()
         while self.status == BotStatus.RUNNING:
             self.log.info(Logger.WAITING_SIGNAL)
@@ -244,4 +275,3 @@ class Bot:
             self._save_signal(Signal(self.signal, datetime.now(), data.iloc[-1]['close'], False))            
             self._open_position(Position(self.signal, datetime.now(), data.iloc[-3]['close'], False))
             self._watch_position()
-

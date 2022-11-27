@@ -319,3 +319,25 @@ def get_klines_history(client: Client, symbol: str, interval: str, start_time: i
     df['volume'] = df['volume'].astype('float')
     df.set_index('open_time', inplace=True)
     return df
+
+
+def get_window_data(window: int = 150, data: DataFrame = None):
+    ''' Get data from the last window minutes '''
+    return data.iloc[-window:]
+
+
+def get_maximas(data: DataFrame = None):
+    return data['high'].max()
+
+
+def get_minimas(data: DataFrame = None):
+    return data['low'].min()
+
+
+def get_avg_extremas(a, b, c, d):
+    return (a + b + c + d) / 4
+
+
+def get_maximas_limit(avg: float, factor: float = 0.5):
+    ''' Return the limit plus/minus Factor for the maximas '''
+    return (avg - factor), (avg + factor)
