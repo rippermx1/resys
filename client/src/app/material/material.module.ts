@@ -6,6 +6,10 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule} from '@angular/material/dialog';
+import {MatInputModule} from '@angular/material/input';
+import {MatSelectModule} from '@angular/material/select';
+import {MatMenuModule} from '@angular/material/menu';
 
 @NgModule({
   declarations: [],
@@ -15,7 +19,11 @@ import {MatButtonModule} from '@angular/material/button';
     MatExpansionModule,
     MatDividerModule,
     MatTooltipModule,
-    MatButtonModule
+    MatButtonModule,
+    MatDialogModule,
+    MatInputModule,
+    MatSelectModule,
+    MatMenuModule
   ],
   exports: [
     MatCardModule,
@@ -23,7 +31,11 @@ import {MatButtonModule} from '@angular/material/button';
     MatExpansionModule,
     MatDividerModule,
     MatTooltipModule,
-    MatButtonModule
+    MatButtonModule,
+    MatDialogModule,
+    MatInputModule,
+    MatSelectModule,
+    MatMenuModule
   ]
 })
 export class MaterialModule { }

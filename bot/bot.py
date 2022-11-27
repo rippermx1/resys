@@ -249,10 +249,6 @@ class Bot:
         [max_b, min_b] = get_maximas(b), get_minimas(b)
         [max_c, min_c] = get_maximas(c), get_minimas(c)
         [max_d, min_d] = get_maximas(d), get_minimas(d)
-        # print(max_a, min_a)
-        # print(max_b, min_b)
-        # print(max_c, min_c)
-        # print(max_d, min_d)
 
         sell_zone = get_maximas_limit(get_avg_extremas(max_a, max_b, max_c, max_d), 1)
         buy_zone  = get_maximas_limit(get_avg_extremas(min_a, min_b, min_c, min_d), 1)
