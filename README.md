@@ -96,3 +96,8 @@
 * set PYTHONPATH=%PYTHONPATH%;C:\path\to\your\project\
 
 
+# Stochastic System
+* Sell if price is above K% (95 upper)
+* Buy if price is below K% (5 lower)
+- "Works Fine if price movements are fast and strong (High Volatility)"
+# Grid System
