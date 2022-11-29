@@ -96,3 +96,17 @@
 * set PYTHONPATH=%PYTHONPATH%;C:\path\to\your\project\
 
 
+# Stochastic System
+* Sell if price is above K% (95 upper)
+* Buy if price is below K% (5 lower)
+- "Works Fine if price movements are fast and strong (High Volatility)"
+# Grid System
+
+# OS
+* os.kill(os.getppid(), signal.SIGTERM)
+* sys.argv[1]
+* p = subprocess.Popen("start cmd /k python D:\CVA_Capital\Bots\script_1.py {} {} {} {} {}".format(symbol, entry_price, entry_order_id, stop_order_id, qty), shell=True)
+
+# subprocess.call('python D:\CVA_Capital\Bots\script_1.py BTCUSDT', creationflags=subprocess.CREATE_NEW_CONSOLE)
+# subprocess.call('python D:\CVA_Capital\Bots\script_2.py ETHUSDT', creationflags=subprocess.CREATE_NEW_CONSOLE)
+# subprocess.Popen("start cmd /k python D:\CVA_Capital\Bots\script_2.py", shell=True) 

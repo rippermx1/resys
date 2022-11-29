@@ -117,7 +117,7 @@ class Bot:
         dc = DataFrame(ta.donchian(high=r_df['close'], low=r_df['close'] ,lower_length=6, upper_length=6)).drop(columns=['DCL_6_6', 'DCU_6_6'])
         r_df = r_df.join(dc)
 
-        stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=40, d=2, smooth_k=12))
+        stoch = DataFrame(ta.stoch(high=r_df['close'], low=r_df['close'] ,close=r_df['close'], k=100, d=2, smooth_k=12))
         stoch.columns = ['STOCHk', 'STOCHd']
         r_df = r_df.join(stoch)
         if self.debug:
