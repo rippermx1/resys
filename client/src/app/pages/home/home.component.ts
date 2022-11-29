@@ -81,10 +81,13 @@ export class HomeComponent implements OnInit {
   }
 
   pause(bot: Bot) {
+    this.fetchingData = true;
     this.running = !this.running;
     bot.status = (this.running) ? 'PAUSED' : 'RUNNING';
     this.userService.updateBotStatus(this.secret, bot.uuid, bot.status).subscribe((response) => {
       console.log(response);
+      if (response)
+        this.fetchingData = false;
       this.bots.find((b) => b.uuid === bot.uuid)!.status = bot.status;
     });
   }

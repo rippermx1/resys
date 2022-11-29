@@ -87,7 +87,7 @@
     - python main.py -symbol BTCUSDT -interval 5m -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25 
 
 * To start ReSys (If you HAVE at least 1 Bot Created) use command: 
-    - python main.py -secret 
+    - python main.py -secret [secret] -bot_id [bot_id]
     
 # API
 * [NOTE] In order to use Good Packages you need to export python path project

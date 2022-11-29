@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from models.bot import NewBotRequest, UserSecret, BotStatus, BotActive
 from helpers.constants import COLLECTION_USER, DB_RESYS
 from auth.auth import Auth
+import subprocess
+import os
+import signal
 
 app = FastAPI()
 app.add_middleware(
@@ -44,7 +47,14 @@ async def bot_active(request: BotActive):
     auth = Auth(DB_RESYS, request.secret)
     if not auth._user_exist():
         return { 'status': 'error', 'message': 'User not found' }
-
+    
     if request.active:
-        
+        p = subprocess.Popen('start cmd /k python C:\cva_capital\ReSys\\bot\main.py -secret {} -bot_id {} '.format(request.secret, request.uuid), shell=True)
+        print(p.pid)
+        auth.update_bot_pid(request.uuid, p.pid)
+    else:
+        bot = auth.get_bot(request.uuid)
+        if bot['pid'] is not None:
+            os.kill(bot['pid'], signal.SIGTERM)
+            auth.update_bot_pid(request.uuid, None)
     return { 'status': 'success', 'message': 'Bots Updated', 'data': auth._update_bot_active(request.uuid, request.active) }
