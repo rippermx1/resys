@@ -61,3 +61,14 @@ class Auth:
     def _get_bots(self):
         ''' Get all bots from user '''
         return self.user['bots'] if self._user_exist() else None
+
+
+    def _update_bot_status(self, uuid: str, status: str):
+        ''' Update bot status '''
+        print(uuid, status)
+        return self.db.update_one(COLLECTION_USER, { 'secret': self.secret, 'bots.uuid': uuid }, { '$set': { 'bots.$.status': status } }) if self._user_exist() else None
+
+
+    def _update_bot_active(self, uuid: str, active: bool):
+        ''' Update bot active '''
+        return self.db.update_one(COLLECTION_USER, { 'secret': self.secret, 'bots.uuid': uuid }, { '$set': { 'bots.$.active': active } }) if self._user_exist() else None

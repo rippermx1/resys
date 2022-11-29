@@ -21,6 +21,8 @@ export class HomeComponent implements OnInit {
   leverageParameter: Parameter = {options: [], label: ''};
   brickSizeParameter: Parameter = {options: [], label: ''};
   trailingPercentageParameter: Parameter = {options: [], label: ''};
+  secret = "52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2"
+  fetchingData: boolean = false;
 
   constructor(
     private userService: UserService,
@@ -35,8 +37,7 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    let secret = "52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2"
-    this.userService.getBots(secret).subscribe((response) => {
+    this.userService.getBots(this.secret).subscribe((response) => {
       this.bots = response.data;
     });
   }
@@ -49,7 +50,16 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  turnOn() {}
+  turnOn(bot: Bot) {
+    this.fetchingData = true;
+    bot.active = !bot.active;
+    this.userService.updateBotActive(this.secret, bot.uuid, bot.active).subscribe((response) => {
+      console.log(response);
+      if (response)
+        this.fetchingData = false;
+      this.bots.find((b) => b.uuid === bot.uuid)!.status = bot.status;
+    });
+  }
 
   delete() {
 
@@ -73,6 +83,10 @@ export class HomeComponent implements OnInit {
   pause(bot: Bot) {
     this.running = !this.running;
     bot.status = (this.running) ? 'PAUSED' : 'RUNNING';
+    this.userService.updateBotStatus(this.secret, bot.uuid, bot.status).subscribe((response) => {
+      console.log(response);
+      this.bots.find((b) => b.uuid === bot.uuid)!.status = bot.status;
+    });
   }
 
   onClick(option: any, menu: string): void {

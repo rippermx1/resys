@@ -23,3 +23,13 @@ class NewBotRequest(BaseModel):
 
 class UserSecret(BaseModel):
     secret: str = None
+
+class BotStatus(BaseModel):
+    secret: str = None
+    uuid: str = None
+    status: str = None
+
+class BotActive(BaseModel):
+    secret: str = None
+    uuid: str = None
+    active: bool = None

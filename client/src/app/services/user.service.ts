@@ -18,4 +18,12 @@ export class UserService {
   getBots(secret: string): Observable<Response<Bot[]>> {
     return this.http.post<Response<Bot[]>>(`${environment.apiUrl}${Endpoint.GET_BOT}`, {secret});
   }
+
+  updateBotStatus(secret: string, uuid: string, status: string): Observable<Response<Bot>> {
+    return this.http.post<Response<Bot>>(`${environment.apiUrl}${Endpoint.UPDATE_BOT_STATUS}`, {secret, uuid, status});
+  }
+
+  updateBotActive(secret: string, uuid: string, active: boolean): Observable<Response<Bot>> {
+    return this.http.post<Response<Bot>>(`${environment.apiUrl}${Endpoint.UPDATE_BOT_ACTIVE}`, {secret, uuid, active});
+  }
 }
