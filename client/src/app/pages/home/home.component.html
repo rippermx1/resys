@@ -1,11 +1,14 @@
+<div *ngFor="let m of menu$ | async"></div>
+
 <mat-drawer-container class="h-100" hasBackdrop="true">
     <mat-drawer #drawer mode="over">
         <div mat-card-avatar class="container-align-h p-10">
             <img src="assets/svg/resys/logo-tux-svgrepo-com.svg" alt="logo">
+            <p class="m-0 fs-12 fw-500 version-color">v0.0.2</p>
         </div>
         <mat-list dense>
             <h3 matSubheader>BOTS</h3>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h" [matMenuTriggerFor]="bot">
                         <p class="fs-12 fw-500 m-0 pointer">DCA (Dollar Cost Average)</p>
@@ -18,7 +21,7 @@
                 </div>
             </mat-list-item>
             <mat-divider></mat-divider>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h">
                         <p class="fs-12 fw-500 m-0 pointer">Grid Basic</p>
@@ -27,7 +30,7 @@
                 </div>
             </mat-list-item>
             <mat-divider></mat-divider>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h" [matMenuTriggerFor]="botTechnical">
                         <p class="fs-12 fw-500 m-0 pointer">Technical</p>
@@ -42,7 +45,7 @@
             <mat-divider></mat-divider>
 
             <h3 matSubheader>TRANSACTIONS</h3>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h">
                         <p class="fs-12 fw-500 m-0 pointer">Spot</p>
@@ -51,7 +54,7 @@
                 </div>
             </mat-list-item>
             <mat-divider></mat-divider>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h">
                         <p class="fs-12 fw-500 m-0 pointer">Futures</p>
@@ -62,7 +65,7 @@
             <mat-divider></mat-divider>
 
             <h3 matSubheader>TEST</h3>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h">
                         <p class="fs-12 fw-500 m-0 pointer">TEST</p>
@@ -71,7 +74,7 @@
                 </div>
             </mat-list-item>
             <mat-divider></mat-divider>
-            <mat-list-item>
+            <mat-list-item class="list-item">
                 <div matLine>
                     <div class="container-h">
                         <p class="fs-12 fw-500 m-0 pointer">TEST</p>
@@ -91,6 +94,13 @@
             <button mat-icon-button color="primary">
                 <mat-icon>exit_to_app</mat-icon>
             </button>
+        </div>
+        <div class="container-title">
+            <h3 class="m-0 p-0">Bots</h3>
+            <mat-icon>keyboard_arrow_right</mat-icon>
+            <h3 class="m-0 p-0">Technical</h3>
+            <mat-icon>keyboard_arrow_right</mat-icon>
+            <h3 class="m-0 p-0">Stoch</h3>
         </div>
         <div class="p-10">
             <mat-accordion>

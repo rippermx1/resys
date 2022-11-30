@@ -1,5 +1,5 @@
 from database.db import Database
-from helpers.constants import DB_RESYS, COLLECTION_USER
+from helpers.constants import DB_RESYS, COLLECTION_USER, COLLECTION_CLIENT_MENU
 from uuid import uuid4
 import json
 
@@ -23,6 +23,12 @@ class Auth:
     def _get_user(self):
         ''' Get user by secret '''
         return self.db.find_one(COLLECTION_USER, { 'secret': self.secret })
+
+    
+    def _get_client_menu(self, uuid: str):
+        ''' Get Main Menu '''
+        menu = self.db.find_one(COLLECTION_CLIENT_MENU, { 'uuid': uuid })
+        return menu['menu'] if menu else None
 
 
     def generate_uuid(self):

@@ -5,6 +5,8 @@ import Bot from 'src/app/interfaces/bot.interface';
 import { Parameter } from 'src/app/interfaces/parameter.interface';
 import { UserService } from 'src/app/services/user.service';
 import { ParameterService } from 'src/app/shared/services/parameter.service';
+import { Observable } from 'rxjs';
+import { Menu } from 'src/app/interfaces/menu.interface';
 
 @Component({
   selector: 'app-home',
@@ -25,6 +27,7 @@ export class HomeComponent implements OnInit {
   fetchingData: boolean = false;
   shouldRun: boolean = false;
   collapseTest: boolean = false;
+  menu$: Observable<any> = new Observable();
 
   constructor(
     private userService: UserService,
@@ -42,6 +45,9 @@ export class HomeComponent implements OnInit {
     this.userService.getBots(this.secret).subscribe((response) => {
       this.bots = response.data;
     });
+
+    this.menu$ = this.userService.getClientMenu(this.secret, '24337283-d233-4ee6-8617-d406054707e0');
+    console.log(this.menu$);
   }
 
   openDialog() {

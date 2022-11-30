@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models.bot import NewBotRequest, UserSecret, BotStatus, BotActive
+from models.bot import NewBotRequest, UserSecret, BotStatus, BotActive, UserSecretUuid
 from helpers.constants import COLLECTION_USER, DB_RESYS
 from auth.auth import Auth
 import subprocess
@@ -60,3 +60,20 @@ async def bot_active(request: BotActive):
             os.kill(bot['pid'], signal.SIGTERM)
             auth.update_bot_pid(request.uuid, None)
     return { 'status': 'success', 'message': 'Bots Updated', 'data': auth._update_bot_active(request.uuid, request.active) }
+
+
+@app.post("/user/bot/delete")
+async def bot_delete(request: BotStatus):
+    auth = Auth(DB_RESYS, request.secret)
+    if not auth._user_exist():
+        return { 'status': 'error', 'message': 'User not found' }
+    return { 'status': 'success', 'message': 'Bot deleted', 'data': auth._delete_bot(request.uuid) }
+
+
+@app.post("/client/menu")
+async def client_menu(request: UserSecretUuid):
+    auth = Auth(DB_RESYS, request.secret)
+    if not auth._user_exist():
+        return { 'status': 'error', 'message': 'User not found' }
+    print(auth._get_client_menu(request.uuid))
+    return { 'status': 'success', 'message': 'Menu fetched', 'data': auth._get_client_menu(request.uuid) }
