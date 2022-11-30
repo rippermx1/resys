@@ -110,3 +110,7 @@
 # subprocess.call('python D:\CVA_Capital\Bots\script_1.py BTCUSDT', creationflags=subprocess.CREATE_NEW_CONSOLE)
 # subprocess.call('python D:\CVA_Capital\Bots\script_2.py ETHUSDT', creationflags=subprocess.CREATE_NEW_CONSOLE)
 # subprocess.Popen("start cmd /k python D:\CVA_Capital\Bots\script_2.py", shell=True) 
+
+
+# NOTES
+* Mientras el precio se desplaza X cantidad de USD el RSI 

@@ -6,6 +6,8 @@ from auth.auth import Auth
 import subprocess
 import os
 import signal
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
@@ -49,7 +51,7 @@ async def bot_active(request: BotActive):
         return { 'status': 'error', 'message': 'User not found' }
     
     if request.active:
-        p = subprocess.Popen('start cmd /k python C:\cva_capital\ReSys\\bot\main.py -secret {} -bot_id {} '.format(request.secret, request.uuid), shell=True)
+        p = subprocess.Popen('start cmd /k python {}main.py -secret {} -bot_id {} '.format(os.getenv('PATH_BOT_FOLDER'), request.secret, request.uuid), shell=True)
         print(p.pid)
         auth.update_bot_pid(request.uuid, p.pid)
     else:
