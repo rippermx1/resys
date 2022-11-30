@@ -23,6 +23,7 @@ export class HomeComponent implements OnInit {
   trailingPercentageParameter: Parameter = {options: [], label: ''};
   secret = "52bfd2de0a2e69dff4517518590ac32a46bd76606ec22a258f99584a6e70aca2"
   fetchingData: boolean = false;
+  shouldRun: boolean = false;
 
   constructor(
     private userService: UserService,
