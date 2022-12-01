@@ -1,0 +1,83 @@
+[{
+  "_id": {
+    "$oid": "6387d8444a5208d5fbaea45d"
+  },
+  "category": "PREMIUM",
+  "menu": [
+    {
+      "label": "BOTS",
+      "url": "",
+      "have_items": true,
+      "visible": true,
+      "enabled": true,
+      "items": [
+        {
+          "label": "DCA (Dollar Cost Average)",
+          "url": "",
+          "have_items": true,
+          "items": [
+            {
+              "label": "DCA Limit",
+              "url": ""
+            },
+            {
+              "label": "DCA Automatic",
+              "url": ""
+            }
+          ]
+        },
+        {
+          "label": "Grid Basic",
+          "url": "",
+          "have_items": true,
+          "items": [
+            {
+              "label": "Grid Spot",
+              "url": ""
+            },
+            {
+              "label": "Grid Futures",
+              "url": ""
+            }
+          ]
+        },
+        {
+          "label": "Technical",
+          "url": "",
+          "have_items": true,
+          "items": [
+            {
+              "label": "Stochastic",
+              "url": ""
+            },
+            {
+              "label": "Stochastic + RSI + BB",
+              "url": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "TRANSACTIONS",
+      "url": "",
+      "have_items": true,
+      "visible": true,
+      "enabled": true,
+      "items": [
+        {
+          "label": "Spot",
+          "url": "",
+          "have_items": true,
+          "items": []
+        },
+        {
+          "label": "Futures",
+          "url": "",
+          "have_items": true,
+          "items": []
+        }
+      ]
+    }
+  ]
+}]
