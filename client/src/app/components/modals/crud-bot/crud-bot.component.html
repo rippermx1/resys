@@ -1,0 +1,78 @@
+<h2 mat-dialog-title>Crearás un nuevo Bot</h2>
+<mat-dialog-content class="mat-typography">
+    <div class="container-v p-5 mt-5 mb-5 br container-border">
+        <div class="container-h">
+            <p class="fs-12 m-0 pointer">Symbol: </p>
+            <p class="fs-12 m-0 fw-600 pointer">
+                <button mat-button [matMenuTriggerFor]="symbol">{{symbolLabel}}<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #symbol="matMenu">
+                    <button mat-menu-item (click)="onClick(o, 'symbol')" *ngFor="let o of symbolOptions">{{o}}</button>
+                </mat-menu>
+            </p>
+        </div>
+        <mat-divider class="m-1"></mat-divider>
+        <div class="container-h">
+            <p class="fs-12 m-0 pointer">Interval: </p>
+            <p class="fs-12 m-0 fw-600 pointer">
+                <button mat-button [matMenuTriggerFor]="interval">{{intervalLabel}}<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #interval="matMenu">
+                    <button mat-menu-item (click)="onClick(o, 'interval')" *ngFor="let o of intervalOptions">{{o}}</button>
+                </mat-menu>
+            </p>
+        </div>
+        <mat-divider class="m-1"></mat-divider>
+        <div class="container-h">
+            <p class="fs-12 m-0 pointer">Volume: </p>
+            <p class="fs-12 m-0 fw-600 pointer">
+                <button mat-button [matMenuTriggerFor]="volume">{{volumeLabel}} USD<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #volume="matMenu">
+                    <button mat-menu-item (click)="onClick(o, 'volume')" *ngFor="let o of volumeOptions">{{o}} USD</button>
+                </mat-menu>
+            </p>
+        </div>
+        <mat-divider class="m-1"></mat-divider>
+        <div class="container-h">
+            <p class="fs-12 m-0 pointer">Leverage: </p>
+            <p class="fs-12 m-0 fw-600 pointer">
+                <button mat-button [matMenuTriggerFor]="leverage">x{{leverageLabel}}<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #leverage="matMenu">
+                    <button mat-menu-item (click)="onClick(o, 'leverage')" *ngFor="let o of leverageOptions">x{{o}}</button>
+                </mat-menu>
+            </p>
+        </div>
+        <mat-divider class="m-1"></mat-divider>
+        <div class="container-h">
+            <p class="fs-12 m-0 pointer">Brick Size: </p>
+            <p class="fs-12 m-0 fw-600 pointer">
+                <button mat-button [matMenuTriggerFor]="bricksize">{{bricksizeLabel}} USD<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #bricksize="matMenu">
+                    <button mat-menu-item (click)="onClick(o, 'bricksize')" *ngFor="let o of bricksizeOptions">{{o}} USD</button>
+                </mat-menu>
+            </p>
+        </div>
+        <mat-divider class="m-1"></mat-divider>
+        <div class="container-h">
+            <p class="fs-12 m-0 pointer">Trailing Percentage: </p>
+            <p class="fs-12 m-0 fw-600 pointer">
+                <button mat-button [matMenuTriggerFor]="trailingptc">{{trailingPercentageLabel}}%<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #trailingptc="matMenu">
+                    <button mat-menu-item (click)="onClick(o, 'trailingptc')" *ngFor="let o of trailingPercentageOptions">{{o}}%</button>
+                </mat-menu>
+            </p>
+        </div>
+    </div>
+
+    <div class="container-v fs-12">
+        <p>Recuerda verificar los valores de los parametros con los cuales a continuación crearás un nuevo Bot. Una vez
+            que esté en ejecución solo podrás volver a configurar sus parametros deteniendo su funcionamiento y esto
+            implica que las transacciones abiertas puedan incurrir en inesperadas perdidas, esto debido a que estarás
+            haciendo un reset.</p>
+        <p>En conciencia de lo anterior</p>
+        <p class="fw-500">¿Estás seguro de continuar? <input type="checkbox" name="" id=""></p>
+    </div>
+
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-button [mat-dialog-close]="true" cdkFocusInitial>Create</button>
+</mat-dialog-actions>

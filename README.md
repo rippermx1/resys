@@ -49,6 +49,30 @@
         * Place a TAKE PROFIT order when Buy Conditions are meet
 
 
+# Types of Bot
+* Renko System
+    * Renko System
+    * Renko System - Buy Spot, Sell Spot
+    * Renko System - Buy Future, Hedge Sell Future
+    * Renko System - Buy Spot, Sell Spot, Hedge Sell Future
+# NOTES
+* Get a look back (default for 5 minutes) of last 12 hours (720 minutes) of Renko Bars since current time
+* Get Maximas and Minimas of the last 12 hours of Renko Bars
+* Get the Avg of the Maximas and Minimas 
+    - Maximas = sum(Hihgs) / count(Hihgs)
+    - Minimas = sum(Lows) / count(Lows)
+    - Calculate Maximas Zone [Level 0] = Maximas[0] - factor
+    - Calculate Maximas Zone [Level 1] = Maximas[0] + factor
+    - Calculate Minimas Zone [Level 0] = Minimas[0] - factor
+    - Calculate Minimas Zone [Level 1] = Minimas[0] + factor
+* Get data from 1m timeframe 
+* Get renko bars from 1m data
+* Find sell signals 
+    - if current close is below (Minimas[1] - factor) and above (Minimas[0] - factor) and RESYS CONDITIONS
+* Find buy signals
+    - if current close is below (Minimas[1] - factor) and above (Minimas[0] - factor) and RESYS CONDITIONS
+
+
 
 # Notes:
 * [ReSys Bot] Return Performance over time compared to the S&P 500 and Bitcoin
@@ -59,5 +83,34 @@
 
 # Notes:
 
-* To start ReSys use command: 
-    - python main.py -symbol BTCUSDT -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25
+* To start ReSys (If DONT HAVE any Bot Created) use command: 
+    - python main.py -symbol BTCUSDT -interval 5m -volume 10 -leverage 50 -brick_size 10 -trailing_ptc 0.25 
+
+* To start ReSys (If you HAVE at least 1 Bot Created) use command: 
+    - python main.py -secret [secret] -bot_id [bot_id]
+    
+# API
+* [NOTE] In order to use Good Packages you need to export python path project
+* export PYTHONPATH="${PYTHONPATH}:/path/to/your/project/"
+# For Windows
+* set PYTHONPATH=%PYTHONPATH%;C:\path\to\your\project\
+
+
+# Stochastic System
+* Sell if price is above K% (95 upper)
+* Buy if price is below K% (5 lower)
+- "Works Fine if price movements are fast and strong (High Volatility)"
+# Grid System
+
+# OS
+* os.kill(os.getppid(), signal.SIGTERM)
+* sys.argv[1]
+* p = subprocess.Popen("start cmd /k python D:\CVA_Capital\Bots\script_1.py {} {} {} {} {}".format(symbol, entry_price, entry_order_id, stop_order_id, qty), shell=True)
+
+# subprocess.call('python D:\CVA_Capital\Bots\script_1.py BTCUSDT', creationflags=subprocess.CREATE_NEW_CONSOLE)
+# subprocess.call('python D:\CVA_Capital\Bots\script_2.py ETHUSDT', creationflags=subprocess.CREATE_NEW_CONSOLE)
+# subprocess.Popen("start cmd /k python D:\CVA_Capital\Bots\script_2.py", shell=True) 
+
+
+# NOTES
+* Mientras el precio se desplaza X cantidad de USD el RSI 
