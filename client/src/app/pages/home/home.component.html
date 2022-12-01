@@ -1,0 +1,229 @@
+<div *ngFor="let m of menu$ | async"></div>
+
+<mat-drawer-container class="h-100" hasBackdrop="true">
+    <mat-drawer #drawer mode="over">
+        <div mat-card-avatar class="container-align-h p-10">
+            <img src="assets/svg/resys/logo-tux-svgrepo-com.svg" alt="logo">
+            <p class="m-0 fs-12 fw-500 version-color">v0.0.2</p>
+        </div>
+        <mat-list dense>
+            <h3 matSubheader>BOTS</h3>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h" [matMenuTriggerFor]="bot">
+                        <p class="fs-12 fw-500 m-0 pointer">DCA (Dollar Cost Average)</p>
+                        <mat-icon matListIcon (click)="collapseTest = !collapseTest">arrow_drop_down</mat-icon>
+                        <mat-menu #bot="matMenu">
+                            <button class="fw-500" mat-menu-item>DCA Limit</button>
+                            <button class="fw-500" mat-menu-item>DCA Automatic</button>
+                        </mat-menu>
+                    </div>                    
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h">
+                        <p class="fs-12 fw-500 m-0 pointer">Grid Basic</p>
+                        <mat-icon matListIcon>arrow_drop_down</mat-icon>
+                    </div>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h" [matMenuTriggerFor]="botTechnical">
+                        <p class="fs-12 fw-500 m-0 pointer">Technical</p>
+                        <mat-icon matListIcon>arrow_drop_down</mat-icon>
+                        <mat-menu #botTechnical="matMenu">
+                            <button class="fw-500" mat-menu-item>Stoch</button>
+                            <button class="fw-500" mat-menu-item>Stock + ATR</button>
+                        </mat-menu>
+                    </div>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+
+            <h3 matSubheader>TRANSACTIONS</h3>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h">
+                        <p class="fs-12 fw-500 m-0 pointer">Spot</p>
+                        <mat-icon matListIcon>arrow_drop_down</mat-icon>
+                    </div>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h">
+                        <p class="fs-12 fw-500 m-0 pointer">Futures</p>
+                        <mat-icon matListIcon>arrow_drop_down</mat-icon>
+                    </div>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+
+            <h3 matSubheader>TEST</h3>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h">
+                        <p class="fs-12 fw-500 m-0 pointer">TEST</p>
+                        <mat-icon matListIcon>arrow_drop_down</mat-icon>
+                    </div>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item class="list-item">
+                <div matLine>
+                    <div class="container-h">
+                        <p class="fs-12 fw-500 m-0 pointer">TEST</p>
+                        <mat-icon matListIcon>arrow_drop_down</mat-icon>
+                    </div>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+        </mat-list>
+    </mat-drawer>
+    <mat-drawer-content>
+        <div class="p-10 container-h bg-header mb-5">
+            <button mat-icon-button color="primary" (click)="drawer.toggle()">
+                <mat-icon>menu</mat-icon>
+            </button>
+            <button mat-stroked-button color="primary" (click)="openDialog()">Crear Bot</button>
+            <button mat-icon-button color="primary">
+                <mat-icon>exit_to_app</mat-icon>
+            </button>
+        </div>
+        <div class="container-title">
+            <h3 class="m-0 p-0">Bots</h3>
+            <mat-icon>keyboard_arrow_right</mat-icon>
+            <h3 class="m-0 p-0">Technical</h3>
+            <mat-icon>keyboard_arrow_right</mat-icon>
+            <h3 class="m-0 p-0">Stoch</h3>
+        </div>
+        <div class="p-10">
+            <mat-accordion>
+                <mat-expansion-panel (opened)="onOpen(b)" (closed)="panelOpenState = false" *ngFor="let b of bots">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div mat-card-avatar class="container-h">
+                                <img [src]="'assets/svg/icon/'+b.short_symbol+'.svg'" [alt]="b.short_symbol">
+                            </div>
+                            <div class="container-v pl-5">
+                                <p class="bot-symbol fs-14 fw-500 m-0">{{b.symbol}}</p>
+                                <p class="bot-status fs-12 m-0">{{b.status}}</p>
+                            </div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div>
+                        <div class="container-v">
+                            <div class="container-actions mt-5 mb-5 p-5">
+                                <button class="fs-12 m-0 pointer nobutton" (click)="turnOn(b)">
+                                    <mat-icon [class]="b.active ? 'on' : 'off'">power_settings_new</mat-icon>
+                                </button>
+                                <button class="fs-12 m-0 pointer nobutton" (click)="pause(b)" [disabled]="!b.active">
+                                    <mat-icon>{{b.status=='RUNNING' ? 'pause' : 'play_arrow'}}</mat-icon>
+                                </button>
+                                <button class="fs-12 m-0 pointer nobutton" (click)="edit(b)">
+                                    <mat-icon>edit</mat-icon>
+                                </button>
+                                <button class="fs-12 m-0 pointer nobutton" (click)="delete()">
+                                    <mat-icon class="red">delete</mat-icon>
+                                </button>
+                            </div>
+                            <mat-progress-bar mode="indeterminate" *ngIf="fetchingData"></mat-progress-bar>
+                        </div>
+                        <div class="container-v container-v p-5 mt-5 mb-5">
+                            <div class="container-h">
+                                <p class="fs-12 m-0 fw-500 pointer"><a href="" class="pnl-flex pnl-color">See Current
+                                        Average
+                                        PNL<mat-icon>refresh</mat-icon></a></p>
+                                <p class="fs-12 m-0 fw-600 pointer pnl-color">{{20 | currency}}</p>
+                            </div>
+                        </div>
+                        <div class="container-v p-5 mt-5 mb-5 br">
+                            <div class="container-h mt-5 mb-5">
+                                <p class="fs-12 m-0 pointer">Interval: </p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="!editing">{{b.interval}}</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                                    <button class="btn-menu-edit fw-600 fs-12" mat-button
+                                        [matMenuTriggerFor]="interval">{{intervalParameter.label}}<mat-icon>
+                                            arrow_drop_down
+                                        </mat-icon></button>
+                                    <mat-menu #interval="matMenu">
+                                        <button class="fw-500" mat-menu-item (click)="onClick(o, 'interval')"
+                                            *ngFor="let o of intervalParameter.options">{{o}}</button>
+                                    </mat-menu>
+                                </p>
+                            </div>
+                            <mat-divider class="m-1"></mat-divider>
+                            <div class="container-h mt-5 mb-5">
+                                <p class="fs-12 m-0 pointer">Volume:</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="!editing">{{b.volume}} USD</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                                    <button class="btn-menu-edit fw-600 fs-12" mat-button
+                                        [matMenuTriggerFor]="volume">{{volumeParameter.label}} USD<mat-icon>
+                                            arrow_drop_down
+                                        </mat-icon></button>
+                                    <mat-menu #volume="matMenu">
+                                        <button class="fw-500" mat-menu-item (click)="onClick(o, 'volume')"
+                                            *ngFor="let o of volumeParameter.options">{{o}} USD</button>
+                                    </mat-menu>
+                                </p>
+                            </div>
+                            <mat-divider class="m-1"></mat-divider>
+                            <div class="container-h mt-5 mb-5">
+                                <p class="fs-12 m-0 pointer">Leverage:</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="!editing">x{{b.leverage}}</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                                    <button class="btn-menu-edit fw-600 fs-12" mat-button
+                                        [matMenuTriggerFor]="leverage">x{{leverageParameter.label}}<mat-icon>
+                                            arrow_drop_down
+                                        </mat-icon></button>
+                                    <mat-menu #leverage="matMenu">
+                                        <button class="fw-500" mat-menu-item (click)="onClick(o, 'leverage')"
+                                            *ngFor="let o of leverageParameter.options">x{{o}}</button>
+                                    </mat-menu>
+                                </p>
+                            </div>
+                            <mat-divider class="m-1"></mat-divider>
+                            <div class="container-h mt-5 mb-5">
+                                <p class="fs-12 m-0 pointer">Brick Size:</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="!editing">{{b.brick_size}} USD</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                                    <button class="btn-menu-edit fw-600 fs-12" mat-button
+                                        [matMenuTriggerFor]="bricksize">{{brickSizeParameter.label}} USD<mat-icon>
+                                            arrow_drop_down</mat-icon></button>
+                                    <mat-menu #bricksize="matMenu">
+                                        <button class="fw-500" mat-menu-item (click)="onClick(o, 'bricksize')"
+                                            *ngFor="let o of brickSizeParameter.options">{{o}} USD</button>
+                                    </mat-menu>
+                                </p>
+                            </div>
+                            <mat-divider class="m-1"></mat-divider>
+                            <div class="container-h mt-5 mb-5">
+                                <p class="fs-12 m-0 pointer">Trailing Percentage</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="!editing">{{b.trailing_ptc}}%</p>
+                                <p class="fs-12 m-0 fw-600 pointer" *ngIf="editing">
+                                    <button class="btn-menu-edit fw-600 fs-12" mat-button
+                                        [matMenuTriggerFor]="trailingPercentage">{{trailingPercentageParameter.label}}%
+                                        <mat-icon>arrow_drop_down</mat-icon>
+                                    </button>
+                                    <mat-menu #trailingPercentage="matMenu">
+                                        <button class="fw-500" mat-menu-item (click)="onClick(o, 'trailingptc')"
+                                            *ngFor="let o of trailingPercentageParameter.options">{{o}}%</button>
+                                    </mat-menu>
+                                </p>
+                            </div>
+                            <div class="container-h p-10" *ngIf="editing">
+                                <button mat-stroked-button (click)="editing = !editing">Cancel</button>
+                                <button mat-stroked-button color="primary" (click)="openDialog()">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </mat-expansion-panel>
+            </mat-accordion>
+        </div>
+    </mat-drawer-content>
+</mat-drawer-container>
