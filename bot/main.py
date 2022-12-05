@@ -4,7 +4,7 @@ import os
 from helpers.logger import Logger
 from auth.auth import Auth
 import argparse
-from models import BotStatus
+from models.models import BotStatus
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-secret', '--secret', type=str, help='User Secret', required=False)

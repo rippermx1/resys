@@ -14,7 +14,7 @@ class Logger():
     SL_UPDATED = 'Stop Loss Order Updated:'
     
     def __init__(self):
-        logging.basicConfig(filename="./std.log", format='%(asctime)s %(message)s', filemode='w')
+        logging.basicConfig(filename="std.log", format='%(asctime)s %(message)s', filemode='w')
         self.log: Logger = logging.getLogger()
         self.log.setLevel(logging.DEBUG)
 

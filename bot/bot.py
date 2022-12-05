@@ -2,17 +2,16 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pandas import DataFrame
 from binance import Client
-from renko import Renko
-import pandas_ta as ta
 from exchange import Exchange
 from database.db import Database
-from models import Signal, Position
+from models.models import Signal, Position, BotStatus
 from helpers.logger import Logger
 from auth.auth import Auth
-from models import BotStatus
 from transaction import Transaction
-from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, SPOT, DEFAULT_TRAILING_PTC
-from helpers.utils import round_down_price, open_position_with_sl, get_order_status, close_position_with_tp, update_sl, get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit
+from data import Data
+from indicator import Indicator
+from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, DEFAULT_TRAILING_PTC
+from helpers.utils import round_down_price, open_position_with_sl, get_order_status, update_sl, get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit
 load_dotenv()
 
 class Bot:
@@ -46,13 +45,14 @@ class Bot:
         self.status = self._bot_status()        
 
         # Data Prepararion
-        self.data = self._get_data()
-        self.renko_bricks = self._get_renko_bricks()
+        self.data = Data(self.client, self.market, self.symbol, self.interval, self.brick_size)
+        self.renko_bricks = self.data._get_renko_bricks()
 
         # Indicators
-        self.donchian = self._get_donchian(lenght=3)
-        self.stochastic = self._get_stochastic(k=45, d=2, smooth_k=9)
-        self.rsi = self._get_rsi(lenght=9)
+        self.indicator = Indicator(self.data)
+        self.donchian = self.indicator._get_donchian(lenght=3)
+        self.stochastic = self.indicator._get_stochastic(k=45, d=2, smooth_k=9)
+        self.rsi = self.indicator._get_rsi(lenght=9)
 
         self._start_bot_info()
 
@@ -60,25 +60,6 @@ class Bot:
     def _start_bot_info(self):
         ''' Print bot info '''
         self.log.info(f"Starting ReSys For: \nSymbol: {self.symbol}\nInterval: {self.interval}\nVolume: {self.volume}\nLeverage: {self.leverage}\nBrick Size: {self.brick_size}\nTrailing Ptc%: {self.trailing_ptc}\nPid: {self.pid}")
-
-
-    def _get_data(self, hist: bool = False, start_str: str = None) -> DataFrame:
-        data = None
-        if hist and self.market == SPOT:
-            data = self.client.get_historical_klines(symbol=self.symbol, interval=self.interval, start_str=start_str, limit=1000)
-        else:
-            data = self.client.get_klines(symbol=self.symbol, interval=self.interval, limit=1000)
-        
-        if hist and self.market == FUTURES:
-            data = self.client.futures_historical_klines(symbol=self.symbol, interval=self.interval, start_str=start_str, limit=1000)
-        else:
-            data = self.client.futures_klines(symbol=self.symbol, interval=self.interval, limit=1000)
-
-        data = DataFrame(data)
-        data = data.iloc[:,[0,1,2,3,4,5]]
-        data.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
-        data[['open','high','low','close', 'volume']] = data[['open','high','low','close', 'volume']].astype(float) 
-        return data
 
 
     def _is_stochastic_overbought(self) -> bool:
@@ -122,29 +103,6 @@ class Bot:
     def _close_above_bb(self, data: DataFrame) -> bool:
         ''' Determine if close is above BB '''
         return data.iloc[-1]['close'] > data.iloc[-1]['BBU_20_2'] and data.iloc[-2]['close'] > data.iloc[-2]['BBU_20_2'] and data.iloc[-3]['close'] > data.iloc[-3]['BBU_20_2'] and data.iloc[-4]['close'] > data.iloc[-4]['BBU_20_2']
-
-
-    def _get_renko_bricks(self) -> DataFrame:
-        self.log.info(Logger.BUILDING_BRICKS)
-        self.data = self._get_data()
-        renko = Renko(self.brick_size, self.data['close'])
-        renko.create_renko()
-        return DataFrame(renko.bricks)
-
-
-    def _get_donchian(self, lenght=6):
-        ''' Get Donchian Channel '''
-        return DataFrame(ta.donchian(high=self.renko_bricks['close'], low=self.renko_bricks['close'] ,lower_length=lenght, upper_length=lenght))
-
-
-    def _get_stochastic(self, k=14, d=2, smooth_k=12):
-        ''' Get Stochastic '''
-        return DataFrame(ta.stoch(high=self.renko_bricks['close'], low=self.renko_bricks['close'] ,close=self.renko_bricks['close'], k=k, d=d, smooth_k=smooth_k))
-
-
-    def _get_rsi(self, lenght=9):
-        ''' Get RSI '''
-        return DataFrame(ta.rsi(self.renko_bricks['close'], lenght))
 
 
     def _get_signal(self) -> str:
@@ -229,8 +187,7 @@ class Bot:
     def _watch_position(self):
         while self.in_position:
             self.log.info(f'{Logger.MONITORING_POSITION} {self.entry_order["orderId"]}')
-            data = self._get_renko_bricks()        
-            exit_signal = self._get_signal(data)
+            exit_signal = self._get_signal()
             sl_status = get_order_status(self.client, self.sl_order, FUTURES)
             self.log.info(f'{Logger.STOP_LOSS_STATUS} {sl_status}')
 
@@ -240,14 +197,14 @@ class Bot:
             pnl = self.da
 
             if self._is_time_to_take_profit(exit_signal):
-                self._update_sl(data.iloc[-1]['close'], data.iloc[-1]['DCM_5_5'], BUY if self.signal == SELL else SELL)
+                self._update_sl(self.renko_bricks.iloc[-1]['close'], self.renko_bricks.iloc[-1]['DCM_5_5'], BUY if self.signal == SELL else SELL)
                 break
             else:
                 if sl_status == Client.ORDER_STATUS_FILLED or sl_status == Client.ORDER_STATUS_CANCELED or sl_status == Client.ORDER_STATUS_EXPIRED:
                     self.log.info(Logger.STOP_LOSS_TRIGGERED)                    
                     self._clean_up()
                     break                
-                self._update_sl(data.iloc[-1]['close'], data.iloc[-3]['DCM_5_5'], BUY if self.signal == SELL else SELL)
+                self._update_sl(self.renko_bricks.iloc[-1]['close'], self.renko_bricks.iloc[-3]['DCM_5_5'], BUY if self.signal == SELL else SELL)
 
 
     def _open_position(self, position: Position):
@@ -288,9 +245,9 @@ class Bot:
             # self.log.info(Logger.WAITING_SIGNAL)
             self.status = self._bot_status()
             
-            self.renko_bricks = self._get_renko_bricks()
-            self.stochastic = self._get_stochastic()
-            self.donchian = self._get_donchian()
+            self.renko_bricks = self.data.__get_renko_bricks()
+            self.stochastic = self.indicator._get_stochastic()
+            self.donchian = self.indicator._get_donchian()
             
             self.signal = self._get_signal()
             if self.signal:
