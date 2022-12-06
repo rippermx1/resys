@@ -13,7 +13,6 @@ args = parser.parse_args()
 
 log = Logger()
 auth = Auth(secret=args.secret)
-user_bot = auth.get_bot(args.bot_id)
 pid = os.getpid()
 
 if __name__ == "__main__":    
@@ -24,7 +23,8 @@ if __name__ == "__main__":
     if not auth._user_have_bots():
         log.error(f"User {auth.secret} has no bots created")
         os.kill(pid, 9)
-
+        
+    user_bot = auth.get_bot(args.bot_id)
     binance = Exchange(auth.user['public_key'], auth.user['secret_key'])
     bot = Bot(binance, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=False, pid=pid)    
     auth.update_bot_pid(args.bot_id, pid)

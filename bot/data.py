@@ -12,6 +12,8 @@ class Data:
         self.interval = inteval
         self.brick_size = brick_size
 
+        self.renko = self._get_renko_bricks()
+
 
     def _get_klines(self, hist: bool = False, start_str: str = None) -> DataFrame:
         ''' Get klines from Binance API '''

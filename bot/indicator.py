@@ -5,6 +5,9 @@ from data import Data
 class Indicator:
     def __init__(self, data: Data) -> None:
         self.data = data
+        self.donchian: DataFrame = self._get_donchian()
+        self.stochastic: DataFrame = self._get_stochastic()
+        self.rsi: DataFrame = self._get_rsi()
 
 
     def _get_donchian(self, lenght=6):

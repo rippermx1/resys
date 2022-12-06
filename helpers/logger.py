@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 class Logger():
 
@@ -14,7 +15,8 @@ class Logger():
     SL_UPDATED = 'Stop Loss Order Updated:'
     
     def __init__(self):
-        logging.basicConfig(filename="std.log", format='%(asctime)s %(message)s', filemode='w')
+        date = datetime.now().strftime("%Y-%m-%d")
+        logging.basicConfig(filename=date+"std.log", format='%(asctime)s %(message)s', filemode='w')
         self.log: Logger = logging.getLogger()
         self.log.setLevel(logging.DEBUG)
 

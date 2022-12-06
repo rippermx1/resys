@@ -341,3 +341,8 @@ def get_avg_extremas(a, b, c, d):
 def get_maximas_limit(avg: float, factor: float = 0.5):
     ''' Return the limit plus/minus Factor for the maximas '''
     return (avg - factor), (avg + factor)
+
+
+def get_distance_ptc(self, a, b)-> float:
+        ''' Get distance between two points in percentage '''
+        return round( (abs(a - b) / a) * 100, 2)
