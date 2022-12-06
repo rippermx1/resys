@@ -1,7 +1,12 @@
 from binance import Client
 from helpers.utils import get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit
+from helpers.constants import SPOT, FUTURES
+from models.models import BotStatus
 
 class Grid:
+
+    def __init__(self) -> None:
+        self.status = None
 
     def _detect_zones(self):
         self.interval = Client.KLINE_INTERVAL_5MINUTE
@@ -23,3 +28,8 @@ class Grid:
         buy_zone  = get_maximas_limit(get_avg_extremas(min_a, min_b, min_c, min_d), 1)
         print(sell_zone, buy_zone)
         return [sell_zone, buy_zone]
+
+
+    async def run(self):
+        while self.status == BotStatus.RUNNING:
+            self._detect_zones()
