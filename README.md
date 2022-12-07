@@ -114,3 +114,11 @@
 
 # NOTES
 * Mientras el precio se desplaza X cantidad de USD el RSI 
+
+# Strategies
+* Scalping
+    - Donchian Slow (Mid as Trailing Stop)
+    - Donchian Fast as Signal
+    - Stochastic as Signal
+    - R/R 1:1.5
+    - 1m

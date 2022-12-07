@@ -1,11 +1,12 @@
-from indicator import Indicator
 from pandas import DataFrame
 import pandas_ta as ta
+from data import Data
 
-class Donchian(Indicator):
+class Donchian():
 
-    def __init__(self) -> None:
-        self.donchian: DataFrame = self.__get_donchian()
+    def __init__(self, data: Data) -> None:
+        self.data = data
+        self.df: DataFrame = self.__get_donchian()
         self.mid_dc_idx = 1
 
 
@@ -14,9 +15,10 @@ class Donchian(Indicator):
         return DataFrame(ta.donchian(high=self.data.renko['close'], low=self.data.renko['close'] ,lower_length=lenght, upper_length=lenght))
 
 
-    def update_donchian(self):
+    def update_donchian(self, data: Data):
         ''' Update Donchian Channel '''
-        self.donchian = self.__get_donchian()
+        self.data = data
+        self.df = self.__get_donchian()
 
 
     def close_above_mid(self) -> bool:

@@ -1,8 +1,7 @@
 from pandas import DataFrame
 import pandas_ta as ta
-from indicator import Indicator
 
-class RSI(Indicator):
+class RSI():
 
     def __init__(self) -> None:
         self.rsi: DataFrame = self._get_rsi()

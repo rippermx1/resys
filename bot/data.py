@@ -15,7 +15,7 @@ class Data:
         self.renko = self.__build_renko_bricks()
 
 
-    def __get_klines(self, hist: bool = False, start_str: str = None) -> DataFrame:
+    def _get_klines(self, hist: bool = False, start_str: str = None) -> DataFrame:
         ''' Get klines from Binance API '''
         data = None
         if hist and self.market == SPOT:

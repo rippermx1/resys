@@ -62,3 +62,19 @@ class BotStatus:
     RUNNING: str = "RUNNING"
     STOPPED: str = "STOPPED"
     PAUSED: str = "PAUSED"
+
+
+class BotType:
+    SCALPER: str = "SCALPER"
+    GRID: str = "GRID"
+    DCA: str = "DCA"
+    ARBITRAGE: str = "ARBITRAGE"
+
+
+class BotAlias:
+    RSI_DC: str = "RSI_DC"
+    STOCH_DC: str = "STOCH_DC"
+    RSI_GRID: str = "RSI_GRID"
+    STOCH_GRID: str = "STOCH_GRID"
+    DCA: str = "DCA"
+    ARBITRAGE: str = "Arbitrage"

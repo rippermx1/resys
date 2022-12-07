@@ -8,11 +8,10 @@ from helpers.logger import Logger
 from auth.auth import Auth
 from transaction import Transaction
 from data import Data
-from indicator import Indicator
 from indicators.stochastic import Stochastic
 from indicators.donchian import Donchian
-from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, DEFAULT_TRAILING_PTC
-from helpers.utils import round_down_price, open_position_with_sl, get_order_status, update_sl, get_distance_ptc
+from helpers.constants import BUY, DB_RESYS, FUTURES, SELL, DEFAULT_TRAILING_PTC
+from helpers.utils import round_down_price, open_position_with_sl, update_sl, get_distance_ptc
 load_dotenv()
 
 class Bot:
@@ -42,14 +41,13 @@ class Bot:
         self.in_position = False
         self.signal_saved = False
 
-        self.client = self.exchange.get_client()        
+        self.client = self.exchange.client
         self.status = self._bot_status()        
 
         self.data = Data(self.client, self.market, self.symbol, self.interval, self.brick_size)
-        self.indicator = Indicator(self.data)
-
-        self.stochastic = Stochastic()
-        self.donchian = Donchian()
+        
+        self.stochastic = Stochastic(self.data)
+        self.donchian = Donchian(self.data)
 
         self._start_bot_info()
 
@@ -166,15 +164,15 @@ class Bot:
 
 
     def run(self):
-        self.status = self._bot_status()
+        pass
+        """ self.status = self._bot_status()
         while self.status == BotStatus.RUNNING:
             self.status = self._bot_status()
             
             self.data.update_renko_bricks()
-            self.indicator.data = self.data
-
-            self.stochastic.update_stochastic()
-            self.donchian.update_donchian()
+            
+            self.stochastic.update_stochastic(self.data)
+            self.donchian.update_donchian(self.data)
             
             print(f'type: {self.data.renko.iloc[-1][0]} | close: {self.data.renko.iloc[-1][2]} | stoch_K: {self.indicator.stochastic.iloc[-1][0]} | stoch_D: {self.indicator.stochastic.iloc[-1][1]} | donchian_M: {self.indicator.donchian.iloc[-1][1]}')
             self.signal = self._get_signal()
@@ -183,4 +181,4 @@ class Bot:
 
             self._save_signal(Signal(self.signal, datetime.now(), self.data.renko.iloc[-1]['close'], False))
             self._open_position(Position(self.signal, datetime.now(), self.data.renko.iloc[-1]['close'], False))
-            self._watch_position()
+            self._watch_position() """

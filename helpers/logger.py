@@ -16,7 +16,7 @@ class Logger():
     
     def __init__(self):
         date = datetime.now().strftime("%Y-%m-%d")
-        logging.basicConfig(filename=date+"std.log", format='%(asctime)s %(message)s', filemode='w')
+        logging.basicConfig(filename=date+".log", format='%(asctime)s %(message)s', filemode='w')
         self.log: Logger = logging.getLogger()
         self.log.setLevel(logging.DEBUG)
 
