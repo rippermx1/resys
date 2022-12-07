@@ -1,6 +1,5 @@
 from datetime import datetime
 from dotenv import load_dotenv
-from pandas import DataFrame
 from binance import Client
 from exchange import Exchange
 from database.db import Database
@@ -10,6 +9,8 @@ from auth.auth import Auth
 from transaction import Transaction
 from data import Data
 from indicator import Indicator
+from indicators.stochastic import Stochastic
+from indicators.donchian import Donchian
 from helpers.constants import BUY, DB_RESYS, DOWN, FUTURES, SELL, STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD, UP, DEFAULT_TRAILING_PTC
 from helpers.utils import round_down_price, open_position_with_sl, get_order_status, update_sl, get_distance_ptc
 load_dotenv()
@@ -18,7 +19,7 @@ class Bot:
 
     def __init__(self, exchange: Exchange, symbol, interval, volume, market, leverage, brick_size, trailing_ptc, secret, bot_id, debug, pid):
         self.log = Logger()
-        self.trx = Transaction()
+        self.transaction = Transaction()
         self.exchange = exchange
         self.symbol = symbol
         self.interval = interval
@@ -47,6 +48,9 @@ class Bot:
         self.data = Data(self.client, self.market, self.symbol, self.interval, self.brick_size)
         self.indicator = Indicator(self.data)
 
+        self.stochastic = Stochastic()
+        self.donchian = Donchian()
+
         self._start_bot_info()
 
 
@@ -55,50 +59,12 @@ class Bot:
         self.log.info(f"Starting ReSys For: \nSymbol: {self.symbol}\nInterval: {self.interval}\nVolume: {self.volume}\nLeverage: {self.leverage}\nBrick Size: {self.brick_size}\nTrailing Ptc%: {self.trailing_ptc}\nPid: {self.pid}")
 
 
-    def _is_stochastic_overbought(self) -> bool:
-        ''' Determine if stochastic is overbought '''
-        s2 = self.indicator.stochastic.iloc[-2][0] > STOCHASTIC_OVERBOUGHT and self.indicator.stochastic.iloc[-2][1] > STOCHASTIC_OVERBOUGHT
-        s3 = self.indicator.stochastic.iloc[-3][0] > STOCHASTIC_OVERBOUGHT and self.indicator.stochastic.iloc[-3][1] > STOCHASTIC_OVERBOUGHT
-        s4 = self.indicator.stochastic.iloc[-4][0] > STOCHASTIC_OVERBOUGHT and self.indicator.stochastic.iloc[-4][1] > STOCHASTIC_OVERBOUGHT
-        return s2 and s3 and s4
-
-
-    def _is_stochastic_oversold(self) -> bool:
-        ''' Determine if stochastic is oversold '''
-        b2 = self.indicator.stochastic.iloc[-2][0] < STOCHASTIC_OVERSOLD and self.indicator.stochastic.iloc[-2][1] < STOCHASTIC_OVERSOLD
-        b3 = self.indicator.stochastic.iloc[-3][0] < STOCHASTIC_OVERSOLD and self.indicator.stochastic.iloc[-3][1] < STOCHASTIC_OVERSOLD
-        b4 = self.indicator.stochastic.iloc[-4][0] < STOCHASTIC_OVERSOLD and self.indicator.stochastic.iloc[-4][1] < STOCHASTIC_OVERSOLD
-        return b2 and b3 and b4
-
-
-    def _is_turning_down(self) -> bool:
-        ''' Determine if is turning down '''
-        return self.data.renko.iloc[-1]['type'] == DOWN and self.data.renko.iloc[-2]['type'] == UP and self.data.renko.iloc[-3]['type'] == UP and self.data.renko.iloc[-4]['type'] == UP and self.data.renko.iloc[-5]['type'] == UP
-
-
-    def _is_turning_up(self) -> bool:
-        ''' Determine if is turning up '''
-        return self.data.renko.iloc[-1]['type'] == UP and self.data.renko.iloc[-2]['type'] == DOWN and self.data.renko.iloc[-3]['type'] == DOWN and self.data.renko.iloc[-4]['type'] == DOWN and self.data.renko.iloc[-5]['type'] == DOWN
-
-
-    def _close_above_dc(self) -> bool:
-        ''' Determine if close is above DC '''
-        mid_dc_idx = 1
-        return self.data.renko.iloc[-1]['close'] > self.data.renko.iloc[-1][mid_dc_idx]
-
-
-    def _close_below_dc(self) -> bool:
-        ''' Determine if close is below DC '''
-        mid_dc_idx = 1
-        return self.data.renko.iloc[-1]['close'] < self.data.renko.iloc[-1][mid_dc_idx]
-
-
     def _get_signal(self) -> str:
         ''' Determine signal '''
         signal = None
-        if self._is_turning_down() & self._is_stochastic_overbought() & self._close_below_dc():
+        if self.data.is_turning_down() & self.stochastic.is_overbought() & self.donchian.close_below_mid():
             signal = SELL
-        elif self._is_turning_up() & self._is_stochastic_oversold() & self._close_above_dc():
+        elif self.data.is_turning_up() & self.stochastic.is_oversold() & self.donchian.close_above_mid():
             signal = BUY
         if signal is not None:
             self.log.info(f'{Logger.SIGNAL_FOUND}: {signal}')            
@@ -195,7 +161,7 @@ class Bot:
             if self.entry_order is None and self.signal is not None:
                 self.sl_price = self._get_stop_loss_price(position.sl_price, d=5)
                 self.entry_order, self.sl_order, self.entry_price = open_position_with_sl(self.client, self.symbol, self.volume, self.sl_price, self.leverage, self.signal)
-                self.trx.save(self.bot_id, self.symbol, self.market, datetime.now(), self.entry_order['entryPrice'], self.entry_order['orderType'], self.sl_order['side'], self.entry_order['orderQty'], self.sl_order['baseAsset'], self.sl_order['quoteAsset'], self.sl_order['fee'])
+                self.transaction.save(self.bot_id, self.symbol, self.market, datetime.now(), self.entry_order['entryPrice'], self.entry_order['orderType'], self.sl_order['side'], self.entry_order['orderQty'], self.sl_order['baseAsset'], self.sl_order['quoteAsset'], self.sl_order['fee'])
                 self.in_position = True
 
 
@@ -204,10 +170,11 @@ class Bot:
         while self.status == BotStatus.RUNNING:
             self.status = self._bot_status()
             
-            self.data.renko = self.data._get_renko_bricks()
+            self.data.update_renko_bricks()
             self.indicator.data = self.data
-            self.indicator.stochastic = self.indicator._get_stochastic()
-            self.indicator.donchian = self.indicator._get_donchian()
+
+            self.stochastic.update_stochastic()
+            self.donchian.update_donchian()
             
             print(f'type: {self.data.renko.iloc[-1][0]} | close: {self.data.renko.iloc[-1][2]} | stoch_K: {self.indicator.stochastic.iloc[-1][0]} | stoch_D: {self.indicator.stochastic.iloc[-1][1]} | donchian_M: {self.indicator.donchian.iloc[-1][1]}')
             self.signal = self._get_signal()

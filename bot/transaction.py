@@ -18,19 +18,19 @@ class Transaction:
         self.quote_asset = None
         self.fee = None
 
-    def save(self, bot_uuid: str, symbol: str, market: str, date, price: float, order_type: str, side: str, quantity: float, base_asset: str, quote_asset: str, fee: float):
+    def save(self):
         ''' Save a new transaction into DB '''
         return self.db.insert_one('transactions', {
-            'bot_uuid': bot_uuid,
-            'symbol': symbol,
-            'market': market,
-            'date': date,
-            'price': price,
-            'order_type': order_type,
-            'side': side,
-            'quantity': quantity,
-            'base_asset': base_asset,
-            'quote_asset': quote_asset,
-            'fee': fee
+            'bot_uuid': self.bot_uuid,
+            'symbol': self.symbol,
+            'market': self.market,
+            'date': self.date,
+            'price': self.price,
+            'order_type': self.order_type,
+            'side': self.side,
+            'quantity': self.quantity,
+            'base_asset': self.base_asset,
+            'quote_asset': self.quote_asset,
+            'fee': self.fee
         })
 

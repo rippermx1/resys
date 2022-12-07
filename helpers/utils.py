@@ -106,19 +106,6 @@ def round_down_price(client: Client, symbol, number):
     return math.floor(number * 10 ** decimals) / 10 ** decimals
 
 
-def get_balance(client: Client):
-    return float([i for i in client.get_account()['balances'] if i['asset'] == 'USDT'][0]['free'])
-
-
-def get_order_book(client: Client, symbol: str, market: str) -> DataFrame:
-    order_book = None
-    if market == SPOT:
-        order_book = DataFrame(client.get_order_book(symbol=symbol, limit=10))
-    if market == FUTURES:
-        order_book = DataFrame(client.futures_order_book(symbol=symbol, limit=10)).iloc[:,[3,4]]
-    return order_book
-
-
 def sell_spot_at_market(client: Client, symbol: str, quantity: float, stop_order):
     try:
         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
@@ -168,13 +155,6 @@ def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float
     except Exception as e:
         log.error(e)
         return stop_order
-
-
-def get_order_status(client: Client, order, market: str):
-    if market == SPOT:
-        return client.get_order(symbol=order['symbol'], orderId=order['orderId'])['status']
-    if market == FUTURES:
-        return client.futures_get_order(symbol=order['symbol'], orderId=order['orderId'])['status']
 
 
 def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):

@@ -1,6 +1,6 @@
 from binance import Client
 from pandas import DataFrame
-from helpers.constants import SPOT, FUTURES
+from helpers.constants import SPOT, FUTURES, UP, DOWN
 from renko import Renko
 
 class Data:
@@ -12,10 +12,10 @@ class Data:
         self.interval = inteval
         self.brick_size = brick_size
 
-        self.renko = self._get_renko_bricks()
+        self.renko = self.__build_renko_bricks()
 
 
-    def _get_klines(self, hist: bool = False, start_str: str = None) -> DataFrame:
+    def __get_klines(self, hist: bool = False, start_str: str = None) -> DataFrame:
         ''' Get klines from Binance API '''
         data = None
         if hist and self.market == SPOT:
@@ -35,9 +35,24 @@ class Data:
         return data
 
 
-    def _get_renko_bricks(self) -> DataFrame:
-        ''' Get Renko bricks '''
+    def __build_renko_bricks(self) -> DataFrame:
+        ''' Build Renko bricks '''
         data = self._get_klines()
         renko = Renko(self.brick_size, data['close'])
         renko.create_renko()
         return DataFrame(renko.bricks)
+
+
+    def update_renko_bricks(self):
+        ''' Rebuild (Update) Renko bricks '''
+        self.renko = self.__build_renko_bricks()
+
+
+    def is_turning_down(self) -> bool:
+        ''' Determine if is turning down '''
+        return self.renko.iloc[-1]['type'] == DOWN and self.renko.iloc[-2]['type'] == UP and self.renko.iloc[-3]['type'] == UP and self.renko.iloc[-4]['type'] == UP and self.renko.iloc[-5]['type'] == UP
+
+
+    def is_turning_up(self) -> bool:
+        ''' Determine if is turning up '''
+        return self.renko.iloc[-1]['type'] == UP and self.renko.iloc[-2]['type'] == DOWN and self.renko.iloc[-3]['type'] == DOWN and self.renko.iloc[-4]['type'] == DOWN and self.renko.iloc[-5]['type'] == DOWN
