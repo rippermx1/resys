@@ -1,7 +1,7 @@
 from pandas import DataFrame
 import pandas_ta as ta
 from helpers.constants import STOCHASTIC_OVERBOUGHT, STOCHASTIC_OVERSOLD
-from data import Data
+from core.data import Data
 
 class Stochastic():
 

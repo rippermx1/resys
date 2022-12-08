@@ -1,6 +1,6 @@
 from pandas import DataFrame
 import pandas_ta as ta
-from data import Data
+from core.data import Data
 
 class Donchian():
 

@@ -1,13 +1,13 @@
 from datetime import datetime
 from dotenv import load_dotenv
 from binance import Client
-from exchange import Exchange
+from core.exchange import Exchange
+from core.transaction import Transaction
+from core.data import Data
 from database.db import Database
-from models.models import Signal, Position, BotStatus
+from models.models import Signal, Position
 from helpers.logger import Logger
 from auth.auth import Auth
-from transaction import Transaction
-from data import Data
 from indicators.stochastic import Stochastic
 from indicators.donchian import Donchian
 from helpers.constants import BUY, DB_RESYS, FUTURES, SELL, DEFAULT_TRAILING_PTC
@@ -57,19 +57,11 @@ class Bot:
         self.log.info(f"Starting ReSys For: \nSymbol: {self.symbol}\nInterval: {self.interval}\nVolume: {self.volume}\nLeverage: {self.leverage}\nBrick Size: {self.brick_size}\nTrailing Ptc%: {self.trailing_ptc}\nPid: {self.pid}")
 
 
-    def _get_signal(self) -> str:
-        ''' Determine signal '''
-        signal = None
-        if self.data.is_turning_down() & self.stochastic.is_overbought() & self.donchian.close_below_mid():
-            signal = SELL
-        elif self.data.is_turning_up() & self.stochastic.is_oversold() & self.donchian.close_above_mid():
-            signal = BUY
-        if signal is not None:
-            self.log.info(f'{Logger.SIGNAL_FOUND}: {signal}')            
-        return signal
+    def get_signal(self) -> str:
+        pass
 
 
-    def _save_signal(self, signal: Signal):
+    def save_signal(self, signal: Signal):
         ''' Save signal Into Database '''
         if signal.side is not None and not self.signal_saved:
             database = Database(DB_RESYS)
@@ -165,20 +157,3 @@ class Bot:
 
     def run(self):
         pass
-        """ self.status = self._bot_status()
-        while self.status == BotStatus.RUNNING:
-            self.status = self._bot_status()
-            
-            self.data.update_renko_bricks()
-            
-            self.stochastic.update_stochastic(self.data)
-            self.donchian.update_donchian(self.data)
-            
-            print(f'type: {self.data.renko.iloc[-1][0]} | close: {self.data.renko.iloc[-1][2]} | stoch_K: {self.indicator.stochastic.iloc[-1][0]} | stoch_D: {self.indicator.stochastic.iloc[-1][1]} | donchian_M: {self.indicator.donchian.iloc[-1][1]}')
-            self.signal = self._get_signal()
-            if self.signal is None:
-                continue
-
-            self._save_signal(Signal(self.signal, datetime.now(), self.data.renko.iloc[-1]['close'], False))
-            self._open_position(Position(self.signal, datetime.now(), self.data.renko.iloc[-1]['close'], False))
-            self._watch_position() """

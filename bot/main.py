@@ -1,4 +1,4 @@
-from exchange import Exchange
+from core.exchange import Exchange
 import os
 from helpers.logger import Logger
 from auth.auth import Auth
