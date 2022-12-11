@@ -1,12 +1,56 @@
 from binance import Client
 from helpers.utils import get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit
-from helpers.constants import SPOT, FUTURES
+from helpers.constants import SPOT, FUTURES, BUY, SELL
 from models.models import BotStatus
+from core.bot import Bot
 
-class Grid:
+class Grid(Bot):
 
-    def __init__(self) -> None:
+    def __init__(self, symbol: str, interval: str, upper_limit: float, lower_limit: float, segment_count: int, order_by_segment: int, volume_per_order: int, stop_treshold: float = 0.0025) -> None:
         self.status = None
+        self.symbol = symbol
+        self.interval = interval
+        self.volume_per_order = volume_per_order
+        self.upper_limit = upper_limit
+        self.lower_limit = lower_limit
+        self.segment_count = segment_count or 3
+        self.height = self._get_height() # In PIPs or USD
+        self.segment_size = self._get_segment_size()
+        self.orders_by_segment = order_by_segment
+        self.buy_orders = []
+        self.sell_orders = []
+        self.stop_orders = []
+        self.stop_treshold = stop_treshold
+
+
+    def _get_height(self):
+        ''' Get the height of the grid '''
+        return abs(self.upper_limit - self.lower_limit)
+
+
+    def _get_segment_size(self):
+        ''' Get the segment size of the grid '''
+        return self.height / self.segment_count
+
+
+    def _get_prices_by_zone(self, zone: str):
+        ''' Get the lower segment prices '''
+        prices = []
+        min_size = self.segment_size / self.orders_by_segment
+        for i in range(1, self.orders_by_segment + 1):
+            prices.append(self.lower_limit + min_size * i if zone is BUY else self.upper_limit - min_size * i)
+        return prices
+
+
+    def get_stop_price(self, zone: str):
+        ''' Get the upper stop price '''
+        return self.upper_limit + (self.upper_limit * self.stop_treshold) if zone is BUY else self.lower_limit - (self.lower_limit * self.stop_treshold)
+
+
+    def calculate_total_volume(self):
+        ''' Calculate the total volume required '''
+        return (self.volume_per_order * self.orders_by_segment) * 2        
+
 
     def _detect_zones(self):
         self.interval = Client.KLINE_INTERVAL_5MINUTE
@@ -32,4 +76,19 @@ class Grid:
 
     async def run(self):
         while self.status == BotStatus.RUNNING:
-            self._detect_zones()
+            # self._detect_zones()
+            pass
+
+
+
+if __name__ == '__main__':
+    grid = Grid('BTCUSDT', Client.KLINE_INTERVAL_5MINUTE, 17600, 15700, 3, 5, 5, 0.01)
+    print(f'Total Volume Required: {grid.calculate_total_volume()}')
+    print(f'BUY Stop Price: {grid.get_stop_price(BUY)}')
+    print(f'SELL Stop Price: {grid.get_stop_price(SELL)}')
+
+    print(f'BUY Prices: {grid._get_prices_by_zone(BUY)}')
+    print(f'SELL Prices: {grid._get_prices_by_zone(SELL)}')
+
+    print(f'Grid Height: {grid.height}')
+    print(f'Grid Segment Size: {grid.segment_size}')

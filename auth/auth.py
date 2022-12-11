@@ -1,7 +1,7 @@
 from database.db import Database
 from helpers.constants import DB_RESYS, COLLECTION_USER, COLLECTION_CLIENT_MENU
 from uuid import uuid4
-import json
+from helpers.helper import Helper
 
 class Auth:
 
@@ -9,6 +9,7 @@ class Auth:
         self.db = Database(db_name)
         self.secret = secret
         self.user = self._get_user()
+        self.helper = Helper()
 
     def login(self, secret):
         ''' Check if user exists '''
@@ -66,12 +67,13 @@ class Auth:
 
     def _get_bots(self):
         ''' Get all bots from user '''
+        for b in self.user['bots']:
+            self._update_bot_active(b['uuid'], self.helper.pid_exists(b['pid']) if b['pid'] else False)
         return self.user['bots'] if self._user_exist() else None
 
 
     def _update_bot_status(self, uuid: str, status: str):
         ''' Update bot status '''
-        print(uuid, status)
         return self.db.update_one(COLLECTION_USER, { 'secret': self.secret, 'bots.uuid': uuid }, { '$set': { 'bots.$.status': status } }) if self._user_exist() else None
 
 

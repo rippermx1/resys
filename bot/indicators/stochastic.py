@@ -8,11 +8,15 @@ class Stochastic():
     def __init__(self, data: Data) -> None:
         ''' Initialize Stochastic '''
         self.data = data
+        self.k = 14
+        self.d = 2
+        self.smooth_k = 12
         self.df: DataFrame = self.__get_stochastic()
 
-    def __get_stochastic(self, k=14, d=2, smooth_k=12):
+
+    def __get_stochastic(self):
         ''' Get Stochastic '''
-        return DataFrame(ta.stoch(high=self.data.renko['close'], low=self.data.renko['close'] ,close=self.data.renko['close'], k=k, d=d, smooth_k=smooth_k))
+        return DataFrame(ta.stoch(high=self.data.renko['close'], low=self.data.renko['close'], close=self.data.renko['close'], k=self.k, d=self.d, smooth_k=self.smooth_k))
 
 
     def update_stochastic(self, data: Data):

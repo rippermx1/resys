@@ -6,13 +6,15 @@ class Donchian():
 
     def __init__(self, data: Data) -> None:
         self.data = data
+        self.length = 6
         self.df: DataFrame = self.__get_donchian()
         self.mid_dc_idx = 1
 
 
-    def __get_donchian(self, lenght=6):
+
+    def __get_donchian(self):
         ''' Get Donchian Channel '''
-        return DataFrame(ta.donchian(high=self.data.renko['close'], low=self.data.renko['close'] ,lower_length=lenght, upper_length=lenght))
+        return DataFrame(ta.donchian(high=self.data.renko['close'], low=self.data.renko['close'], lower_length=self.length, upper_length=self.length))
 
 
     def update_donchian(self, data: Data):

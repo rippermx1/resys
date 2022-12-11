@@ -31,8 +31,7 @@ if __name__ == "__main__":
     if user_bot['type'] == BotType.SCALPER:
         if user_bot['alias'] == BotAlias.STOCH_DC:
             from scalping.stochastic_donchian import StochasticDonchian
-            bot = StochasticDonchian(exchange, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=False, pid=pid)
-            print(bot)
+            bot = StochasticDonchian(exchange, user_bot['symbol'], user_bot['interval'], user_bot['volume'], user_bot['market'], user_bot['leverage'], user_bot['brick_size'], user_bot['trailing_ptc'], auth.secret, user_bot['uuid'], debug=False, pid=pid)            
         else:
             log.error(f"Bot alias {user_bot['alias']} not found")
             os.kill(pid, 9)
@@ -40,7 +39,7 @@ if __name__ == "__main__":
         log.error(f"Bot type {user_bot['type']} not found")
         os.kill(pid, 9)
 
-    # auth.update_bot_pid(args.bot_id, pid)
+    auth.update_bot_pid(args.bot_id, pid)
     while user_bot['enabled']:
         try:
             if user_bot['status'] == BotStatus.STOPPED:

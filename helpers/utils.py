@@ -135,28 +135,6 @@ def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: 
         return stop_order
 
 
-def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float, side: str):
-    stop_order = None
-    try:
-        old_order_status = get_order_status(client, old_stop_order, FUTURES)
-        print(f'update_sl: ${old_order_status}')
-        if old_order_status == Client.ORDER_STATUS_NEW:
-            client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
-            stop_order = client.futures_create_order(
-                symbol=symbol,
-                side=side,
-                type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-                stopPrice=new_stop_price,                    
-                closePosition=True
-            )
-            log.info(f"update {symbol} sl {new_stop_price}")
-            print(stop_order)
-        return stop_order
-    except Exception as e:
-        log.error(e)
-        return stop_order
-
-
 def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
     entry_order = None
     stop_order = None

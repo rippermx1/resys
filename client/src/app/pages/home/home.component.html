@@ -119,8 +119,15 @@
                     <div>
                         <div class="container-v">
                             <div class="container-actions mt-5 mb-5 p-5">
-                                <button class="fs-12 m-0 pointer nobutton" (click)="turnOn(b)">
-                                    <mat-icon [class]="b.active ? 'on' : 'off'">power_settings_new</mat-icon>
+                                <button class="fs-12 m-0 pointer nobutton">
+                                    <!-- <mat-icon [class]="b.active ? 'on' : 'off'">power_settings_new</mat-icon> -->
+                                    <mat-slide-toggle
+                                        class="example-margin"
+                                        [color]="'primary'"
+                                        [checked]="b.active"
+                                        [disabled]="false"
+                                        (change)="turnOn(b, $event)">                                        
+                                    </mat-slide-toggle>(off/on)
                                 </button>
                                 <button class="fs-12 m-0 pointer nobutton" (click)="pause(b)" [disabled]="!b.active">
                                     <mat-icon>{{b.status=='RUNNING' ? 'pause' : 'play_arrow'}}</mat-icon>

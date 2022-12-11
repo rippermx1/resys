@@ -6,9 +6,11 @@ from auth.auth import Auth
 import subprocess
 import os
 import signal
+from helpers.helper import Helper
 from dotenv import load_dotenv
 load_dotenv()
 
+helper = Helper()
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -50,15 +52,20 @@ async def bot_active(request: BotActive):
     if not auth._user_exist():
         return { 'status': 'error', 'message': 'User not found' }
     
-    if request.active:
-        p = subprocess.Popen('start cmd /k python {}main.py -secret {} -bot_id {} '.format(os.getenv('PATH_BOT_FOLDER'), request.secret, request.uuid), shell=True)
-        print(p.pid)
-        auth.update_bot_pid(request.uuid, p.pid)
-    else:
-        bot = auth.get_bot(request.uuid)
-        if bot['pid'] is not None:
-            os.kill(bot['pid'], signal.SIGTERM)
-            auth.update_bot_pid(request.uuid, None)
+    bot = auth.get_bot(request.uuid)
+    if bot is None:
+        return { 'status': 'error', 'message': 'Bot not found' }
+
+    if not bot['active'] and request.active:
+        subprocess.Popen('start cmd /k python {}main.py -secret {} -bot_id {} '.format(os.getenv('PATH_BOT_FOLDER'), request.secret, request.uuid), shell=True)        
+    if bot['active'] and not request.active:
+        try:
+            if helper.pid_exists(bot['pid']):
+                os.kill(bot['pid'], signal.SIGTERM)
+                auth.update_bot_pid(request.uuid, None)
+        except:
+            return { 'status': 'error', 'message': 'Bot PID not killed' }
+        
     return { 'status': 'success', 'message': 'Bots Updated', 'data': auth._update_bot_active(request.uuid, request.active) }
 
 

@@ -1,4 +1,4 @@
-from exchange import Exchange
+from core.exchange import Exchange
 from helpers.constants import BUY, SELL, FUTURES
 from helpers.utils import round_down, round_down_price
 from binance import Client
@@ -61,4 +61,4 @@ class Position:
                     )
                     # log.info(f'{SELL if side == BUY else BUY} Stop {stop_order}')                                              
                 break    
-        return entry_order, stop_order, level_price
+        return entry_order, stop_order
