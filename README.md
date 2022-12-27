@@ -112,9 +112,6 @@
 # subprocess.Popen("start cmd /k python D:\CVA_Capital\Bots\script_2.py", shell=True) 
 
 
-# NOTES
-* Mientras el precio se desplaza X cantidad de USD el RSI 
-
 # Strategies
 * Scalping
     - Donchian Slow (Mid as Trailing Stop)

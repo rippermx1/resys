@@ -47,7 +47,7 @@ class Exchange:
     def update_sl(self, symbol: str, old_stop_order, new_stop_price: float, side: str):
         stop_order = None
         try:
-            old_order_status = self.get_order_status(self.client, old_stop_order, FUTURES)
+            old_order_status = self.get_order_status(old_stop_order)
             print(f'update_sl: ${old_order_status}')
             if old_order_status == Client.ORDER_STATUS_NEW:
                 self.client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])

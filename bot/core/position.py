@@ -1,6 +1,7 @@
 from core.exchange import Exchange
 from helpers.constants import BUY, SELL, FUTURES
 from helpers.utils import round_down, round_down_price
+from helpers.logger import Logger
 from binance import Client
 from pandas import DataFrame
 
@@ -29,6 +30,7 @@ class Position:
         self.volume = None
 
         self.exchange = exchange
+        self.log = Logger()
 
 
     def open_with_sl(self):
@@ -40,25 +42,23 @@ class Position:
             level_liquidity = float(order_book.iloc[i].bids[1]) if self.side == SELL else float(order_book.iloc[i].asks[1])
             quantity = round(round_down(self.exchange.client, self.symbol, (self.volume / level_price)), 3)
             
-            # log.info(f'{Logger.GETTIN_BEST_PRICE}: {level_price}')
+            self.log.info(f'{Logger.GETTIN_BEST_PRICE}: {level_price}')
             if quantity < level_liquidity:
                 entry_order = self.exchange.create_order(
                     symbol=self.symbol, 
                     side=Client.SIDE_SELL if self.side == SELL else Client.SIDE_BUY, 
-                    type=Client.FUTURE_ORDER_TYPE_MARKET, 
                     quantity=quantity,
                     with_sl=False
                 )
-                # log.info(f'{side} Market: {entry_order}')            
+                self.log.info(f'{self.side} Market: {entry_order}')            
                 if entry_order is not None:
                     sl_price = round_down_price(self.exchange.client, self.symbol, self.sl_price)
                     stop_order = self.exchange.create_order(
                         symbol=self.symbol,
                         side=Client.SIDE_BUY if self.side == SELL else Client.SIDE_SELL,
-                        type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-                        price=sl_price,                    
+                        sl_price=sl_price,                    
                         with_sl=True
                     )
-                    # log.info(f'{SELL if side == BUY else BUY} Stop {stop_order}')                                              
+                    self.log.info(f'{SELL if self.side == BUY else BUY} Stop {stop_order}')                                              
                 break    
         return entry_order, stop_order

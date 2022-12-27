@@ -13,8 +13,8 @@ class StochasticDonchian(Bot):
 
     def __init__(self, exchange: Exchange, symbol, interval, volume, market, leverage, brick_size, trailing_ptc, secret, bot_id, debug, pid):
         super().__init__(exchange, symbol, interval, volume, market, leverage, brick_size, trailing_ptc, secret, bot_id, debug, pid)
-        self.stochastic.smooth_k = 21
-        self.stochastic.k = 100
+        self.stochastic.smooth_k = 9
+        self.stochastic.k = 60
         self.stochastic.d = 2
         self.donchian.length = 6
 
@@ -49,7 +49,7 @@ class StochasticDonchian(Bot):
     def watch_position(self):
         while self.in_position:
             self.log.info(f'{Logger.MONITORING_POSITION} {self.entry_order["orderId"]}')
-            sl_status = self.exchange.get_order_status(self.client, self.sl_order, FUTURES)
+            sl_status = self.exchange.get_order_status(self.sl_order)
             self.log.info(f'{Logger.STOP_LOSS_STATUS} {sl_status}')
 
             # TODO: Calculate distance between current close and entry_price to get PNL
@@ -73,7 +73,7 @@ class StochasticDonchian(Bot):
         if (distance > (self.trailing_ptc * 2)) and right_direction:
             self._increase_trailing_ptc()
             self.sl_price = self._get_stop_loss_price(avg, d=1)
-            self.sl_order = self.exchange.update_sl(self.client, self.symbol, self.sl_order, self.sl_price, protection_order_side)
+            self.sl_order = self.exchange.update_sl(self.symbol, self.sl_order, self.sl_price, protection_order_side)
             self.log.info(f'{Logger.SL_UPDATED} {self.sl_order["orderId"]}')
             if self.sl_order is None:
                 self._clean_up()
@@ -86,12 +86,13 @@ class StochasticDonchian(Bot):
                 self.position.symbol = self.symbol
                 self.position.market = self.market
                 self.position.entry_price = self.entry_price
-                self.position.sl_price = self._get_stop_loss_price(self.entry_price, d=5)
+                self.position.sl_price = self._get_stop_loss_price(self.entry_price, d=10)
                 self.position.volume = self.volume
                 self.position.leverage = self.leverage
+                self.position.side = self.signal
                 
                 self.entry_order, self.sl_order = self.position.open_with_sl()
-                self.transaction.save(self.bot_id, self.symbol, self.market, datetime.now(), self.entry_order['entryPrice'], self.entry_order['orderType'], self.sl_order['side'], self.entry_order['orderQty'], self.sl_order['baseAsset'], self.sl_order['quoteAsset'], self.sl_order['fee'])
+                # self.transaction.save(self.bot_id, self.symbol, self.market, datetime.now(), self.entry_order['entryPrice'], self.entry_order['orderType'], self.sl_order['side'], self.entry_order['orderQty'], self.sl_order['baseAsset'], self.sl_order['quoteAsset'], self.sl_order['fee'])
                 self.in_position = True
 
 
@@ -101,11 +102,10 @@ class StochasticDonchian(Bot):
             self.status = self._bot_status()
             
             self.data.update_renko_bricks()
-            
             self.stochastic.update_stochastic(self.data)
             self.donchian.update_donchian(self.data)
             
-            print(f'type: {self.data.renko.iloc[-1][0]} | close: {self.data.renko.iloc[-1][2]} | stoch_K: {self.stochastic.df.iloc[-1][0]} | stoch_D: {self.stochastic.df.iloc[-1][1]} | donchian_M: {self.donchian.df.iloc[-1][1]}')
+            print(f'type: {self.data.renko.iloc[-1][0]} | close: {self.data.renko.iloc[-1][2]} | stoch_K: {self.stochastic.df.iloc[-1][0]} | stoch_D: {self.stochastic.df.iloc[-1][1]} | donchian_M: {self.donchian.df.iloc[-1][1]}', flush=True)
             self.signal = self.get_signal()
             if self.signal is None:
                 continue
