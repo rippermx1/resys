@@ -50,9 +50,9 @@ class Data:
 
     def is_turning_down(self) -> bool:
         ''' Determine if is turning down '''
-        return self.renko.iloc[-1]['type'] == DOWN and self.renko.iloc[-2]['type'] == UP and self.renko.iloc[-3]['type'] == UP and self.renko.iloc[-4]['type'] == UP and self.renko.iloc[-5]['type'] == UP
+        return self.renko.iloc[-1]['type'] == DOWN and self.renko.iloc[-2]['type'] == DOWN and self.renko.iloc[-3]['type'] == UP and self.renko.iloc[-4]['type'] == UP and self.renko.iloc[-5]['type'] == UP
 
 
     def is_turning_up(self) -> bool:
         ''' Determine if is turning up '''
-        return self.renko.iloc[-1]['type'] == UP and self.renko.iloc[-2]['type'] == DOWN and self.renko.iloc[-3]['type'] == DOWN and self.renko.iloc[-4]['type'] == DOWN and self.renko.iloc[-5]['type'] == DOWN
+        return self.renko.iloc[-1]['type'] == UP and self.renko.iloc[-2]['type'] == UP and self.renko.iloc[-3]['type'] == DOWN and self.renko.iloc[-4]['type'] == DOWN and self.renko.iloc[-5]['type'] == DOWN

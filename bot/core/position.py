@@ -1,6 +1,7 @@
 from core.exchange import Exchange
 from helpers.constants import BUY, SELL, FUTURES
 from helpers.utils import round_down, round_down_price
+from helpers.logger import Logger
 from binance import Client
 from pandas import DataFrame
 from helpers.logger import Logger
@@ -47,7 +48,6 @@ class Position:
                 entry_order = self.exchange.create_order(
                     symbol=self.symbol, 
                     side=Client.SIDE_SELL if self.side == SELL else Client.SIDE_BUY, 
-                    type=Client.FUTURE_ORDER_TYPE_MARKET, 
                     quantity=quantity,
                     with_sl=False
                 )
@@ -57,8 +57,7 @@ class Position:
                     stop_order = self.exchange.create_order(
                         symbol=self.symbol,
                         side=Client.SIDE_BUY if self.side == SELL else Client.SIDE_SELL,
-                        type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-                        price=sl_price,                    
+                        sl_price=sl_price,                    
                         with_sl=True
                     )
                     self.log.info(f'{SELL if self.side == BUY else BUY} Stop {stop_order}')                                              

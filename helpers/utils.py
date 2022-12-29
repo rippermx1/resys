@@ -301,6 +301,6 @@ def get_maximas_limit(avg: float, factor: float = 0.5):
     return (avg - factor), (avg + factor)
 
 
-def get_distance_ptc(self, a, b)-> float:
+def get_distance_ptc(a, b)-> float:
         ''' Get distance between two points in percentage '''
         return round( (abs(a - b) / a) * 100, 2)
