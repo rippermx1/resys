@@ -1,8 +1,9 @@
 from binance import Client
-from helpers.utils import get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit
+from helpers.utils import get_window_data, get_avg_extremas, get_maximas, get_minimas, get_maximas_limit, round_down
 from helpers.constants import SPOT, FUTURES, BUY, SELL
 from models.models import BotStatus
 from core.bot import Bot
+from core.exchange import Exchange
 
 class Grid(Bot):
 
@@ -21,6 +22,7 @@ class Grid(Bot):
         self.sell_orders = []
         self.stop_orders = []
         self.stop_treshold = stop_treshold
+        self.exchange = Exchange('eiaYQ0IImv97voRIaHnoR95C6Ajmj8L23gP636Lzx3pxGWTtF03JPZmTVw8Aq8aS', '0k5CBxnfzjrw5zbiwuni5VqVmT6HLFlwU6gp0ImPgrHsLpfb8NLqSWUw4KNsaPg1', FUTURES)
 
 
     def _get_height(self):
@@ -84,11 +86,33 @@ class Grid(Bot):
 if __name__ == '__main__':
     grid = Grid('BTCUSDT', Client.KLINE_INTERVAL_5MINUTE, 17600, 15700, 3, 5, 5, 0.01)
     print(f'Total Volume Required: {grid.calculate_total_volume()}')
-    print(f'BUY Stop Price: {grid.get_stop_price(BUY)}')
-    print(f'SELL Stop Price: {grid.get_stop_price(SELL)}')
 
-    print(f'BUY Prices: {grid._get_prices_by_zone(BUY)}')
-    print(f'SELL Prices: {grid._get_prices_by_zone(SELL)}')
+    for buy_price in grid._get_prices_by_zone(BUY):
+        print(f'BUY Price: {buy_price}')
+        print(f'BUY Stop Price: {grid.get_stop_price(BUY)}')
+        # create a stop-market buy order on futures
+        order = grid.exchange.client.futures_create_order(
+            symbol=grid.symbol,
+            side=Client.SIDE_BUY,
+            type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+            quantity = round(round_down(grid.exchange.client, grid.symbol, (grid.volume / buy_price)), 3),
+            price=buy_price,
+            stopPrice=grid.get_stop_price(BUY),
+            timeInForce=Client.TIME_IN_FORCE_GTC
+        )
+    for sell_price in grid._get_prices_by_zone(SELL):
+        print(f'SELL Price: {sell_price}')
+        print(f'SELL Stop Price: {grid.get_stop_price(SELL)}')
+        # create a stop-market buy order on futures
+        order = grid.exchange.client.futures_create_order(
+            symbol=grid.symbol,
+            side=Client.SIDE_SELL,
+            type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
+            quantity = round(round_down(grid.exchange.client, grid.symbol, (grid.volume / sell_price)), 3),
+            price=sell_price,
+            stopPrice=grid.get_stop_price(SELL),
+            timeInForce=Client.TIME_IN_FORCE_GTC
+        )
 
     print(f'Grid Height: {grid.height}')
     print(f'Grid Segment Size: {grid.segment_size}')

@@ -91,6 +91,7 @@ class StochasticDonchian(Bot):
                 self.position.leverage = self.leverage
                 
                 self.entry_order, self.sl_order = self.position.open_with_sl()
+                print(self.entry_order, self.sl_order)
                 self.transaction.save(self.bot_id, self.symbol, self.market, datetime.now(), self.entry_order['entryPrice'], self.entry_order['orderType'], self.sl_order['side'], self.entry_order['orderQty'], self.sl_order['baseAsset'], self.sl_order['quoteAsset'], self.sl_order['fee'])
                 self.in_position = True
 
