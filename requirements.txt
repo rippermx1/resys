@@ -9,3 +9,4 @@ pytest
 pymongo
 rich
 uuid
+psutil

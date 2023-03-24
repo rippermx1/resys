@@ -106,19 +106,6 @@ def round_down_price(client: Client, symbol, number):
     return math.floor(number * 10 ** decimals) / 10 ** decimals
 
 
-def get_balance(client: Client):
-    return float([i for i in client.get_account()['balances'] if i['asset'] == 'USDT'][0]['free'])
-
-
-def get_order_book(client: Client, symbol: str, market: str) -> DataFrame:
-    order_book = None
-    if market == SPOT:
-        order_book = DataFrame(client.get_order_book(symbol=symbol, limit=10))
-    if market == FUTURES:
-        order_book = DataFrame(client.futures_order_book(symbol=symbol, limit=10)).iloc[:,[3,4]]
-    return order_book
-
-
 def sell_spot_at_market(client: Client, symbol: str, quantity: float, stop_order):
     try:
         client.cancel_order(symbol=symbol, orderId=stop_order['orderId'])
@@ -146,35 +133,6 @@ def update_spot_sl(client: Client, symbol: str, old_stop_order, new_stop_price: 
     except Exception as e:
         log.error(e)
         return stop_order
-
-
-def update_sl(client: Client, symbol: str, old_stop_order, new_stop_price: float, side: str):
-    stop_order = None
-    try:
-        old_order_status = get_order_status(client, old_stop_order, FUTURES)
-        print(f'update_sl: ${old_order_status}')
-        if old_order_status == Client.ORDER_STATUS_NEW:
-            client.futures_cancel_order(symbol=symbol, orderId=old_stop_order['orderId'])
-            stop_order = client.futures_create_order(
-                symbol=symbol,
-                side=side,
-                type=Client.FUTURE_ORDER_TYPE_STOP_MARKET,
-                stopPrice=new_stop_price,                    
-                closePosition=True
-            )
-            log.info(f"update {symbol} sl {new_stop_price}")
-            print(stop_order)
-        return stop_order
-    except Exception as e:
-        log.error(e)
-        return stop_order
-
-
-def get_order_status(client: Client, order, market: str):
-    if market == SPOT:
-        return client.get_order(symbol=order['symbol'], orderId=order['orderId'])['status']
-    if market == FUTURES:
-        return client.futures_get_order(symbol=order['symbol'], orderId=order['orderId'])['status']
 
 
 def buy_spot_with_sl(client: Client, symbol: str, volume: int, stop_price: float):
@@ -341,3 +299,8 @@ def get_avg_extremas(a, b, c, d):
 def get_maximas_limit(avg: float, factor: float = 0.5):
     ''' Return the limit plus/minus Factor for the maximas '''
     return (avg - factor), (avg + factor)
+
+
+def get_distance_ptc(a, b)-> float:
+        ''' Get distance between two points in percentage '''
+        return round( (abs(a - b) / a) * 100, 2)

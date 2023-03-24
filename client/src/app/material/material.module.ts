@@ -13,6 +13,10 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {MatListModule} from '@angular/material/list';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+
+
 
 @NgModule({
   declarations: [],
@@ -29,7 +33,9 @@ import {MatListModule} from '@angular/material/list';
     MatMenuModule,
     MatProgressBarModule,
     MatSidenavModule,
-    MatListModule
+    MatListModule,
+    MatSlideToggleModule,
+    MatSnackBarModule
   ],
   exports: [
     MatCardModule,
@@ -44,7 +50,9 @@ import {MatListModule} from '@angular/material/list';
     MatMenuModule,
     MatProgressBarModule,
     MatSidenavModule,
-    MatListModule
+    MatListModule,
+    MatSlideToggleModule,
+    MatSnackBarModule
   ]
 })
 export class MaterialModule { }
