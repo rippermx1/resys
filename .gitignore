@@ -1,6 +1,6 @@
 .env
 __pycache__/
-bot/std.log
-std.log
+bot/*.log
+*.log
 .vscode/
 .pytest_cache/

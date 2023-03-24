@@ -58,14 +58,17 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  turnOn(bot: Bot) {
+  turnOn(bot: Bot, event: any) {
+    console.log(event);
     this.fetchingData = true;
-    bot.active = !bot.active;
+    bot.active = event.checked;
     this.userService.updateBotActive(this.secret, bot.uuid, bot.active).subscribe((response) => {
       console.log(response);
       if (response)
         this.fetchingData = false;
       this.bots.find((b) => b.uuid === bot.uuid)!.status = bot.status;
+    }, (error) => {
+      // console.log(error);
     });
   }
 
