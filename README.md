@@ -119,3 +119,7 @@
     - Stochastic as Signal
     - R/R 1:1.5
     - 1m
+
+
+# Install python through conda
+* conda create -n <name> python=3.9
