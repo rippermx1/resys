@@ -123,3 +123,14 @@
 
 # Install python through conda
 * conda create -n <name> python=3.9
+
+
+# Important for Data Analysis
+* Get Klines (ohlc) from 1m for each day
+    - Create a bot to get the data from 1m for each day and save it to sql database
+    - Run the bot every day at 00:00:00
+    - Get the data from the sql database and save it to csv file
+    - Create a python script to read the csv file and create a dataframe
+
+* The use of the intraday data is for backtesting and data analysis
+* considering the performance each day
