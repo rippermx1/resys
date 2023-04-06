@@ -14,3 +14,6 @@
 * Tier 1:
     - Short (+0.5% std dev) | 4.8% Risk | 200usd  L:x6 * V:33.5usd | P:1.0050
     - Long  (-0.5% std dev) | 4.8% Risk | 200usd  L:x6 * V:33.5usd | P:0.9950
+* Tier 0:
+    - Short (+0.25% std dev) | 4.8% Risk | 200usd  L:x6 * V:33.5usd | P:1.0025
+    - Long  (-0.25% std dev) | 4.8% Risk | 200usd  L:x6 * V:33.5usd | P:0.9975
